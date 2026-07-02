@@ -78,6 +78,16 @@
                     </div>
                     <!-- Chart Controls -->
                     <div class="date-filters">
+                        <!-- Chart Type Toggle -->
+                        <div class="toggle-group" id="chart-type-toggle">
+                            <button class="toggle-btn active" data-type="line" title="Growth Trend Line">
+                                <i data-lucide="trending-up"></i> Trend
+                            </button>
+                            <button class="toggle-btn" data-type="bar" title="Latest Standings Bar">
+                                <i data-lucide="bar-chart-3"></i> Standings
+                            </button>
+                        </div>
+                        
                         <div class="date-select-wrapper" id="chart-sns-wrapper">
                             <label for="chart-sns-select">Platform:</label>
                             <select id="chart-sns-select">
@@ -87,11 +97,11 @@
                                 <option value="tiktok">TikTok</option>
                             </select>
                         </div>
-                        <div class="date-select-wrapper">
+                        <div class="date-select-wrapper" id="start-date-wrapper">
                             <label for="start-date-select">From:</label>
                             <select id="start-date-select"></select>
                         </div>
-                        <div class="date-select-wrapper">
+                        <div class="date-select-wrapper" id="end-date-wrapper">
                             <label for="end-date-select">To:</label>
                             <select id="end-date-select"></select>
                         </div>

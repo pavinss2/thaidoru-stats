@@ -16,6 +16,7 @@ let sortSelect = "name";
 let startDate = "";
 let endDate = "";
 let chartPlatform = "instagram"; // Plotted SNS platform
+let chartType = "line"; // Plotted chart view type ("line" or "bar")
 
 // Multi-selection comparative tracking
 let selectedIdols = []; // Array of selected member/group names
@@ -251,6 +252,33 @@ function setupFilters() {
         renderGrowthChart();
     });
 
+    // Chart Type (Line / Bar) Toggle
+    const typeButtons = document.querySelectorAll("#chart-type-toggle .toggle-btn");
+    typeButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            typeButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            chartType = btn.getAttribute("data-type");
+            
+            const startWrapper = document.getElementById("start-date-wrapper");
+            const endWrapper = document.getElementById("end-date-wrapper");
+            if (startWrapper && endWrapper) {
+                if (chartType === "bar") {
+                    startWrapper.style.opacity = "0.3";
+                    startWrapper.style.pointerEvents = "none";
+                    endWrapper.style.opacity = "0.3";
+                    endWrapper.style.pointerEvents = "none";
+                } else {
+                    startWrapper.style.opacity = "1";
+                    startWrapper.style.pointerEvents = "auto";
+                    endWrapper.style.opacity = "1";
+                    endWrapper.style.pointerEvents = "auto";
+                }
+            }
+            renderGrowthChart();
+        });
+    });
+
     // Clear Selection Button Click
     const clearBtn = document.getElementById("clear-selection-btn");
     clearBtn.addEventListener("click", () => {
@@ -450,6 +478,7 @@ function renderGrowthChart() {
     const dates = fullDates.slice(startIndex !== -1 ? startIndex : 0, (endIndex !== -1 ? endIndex : fullDates.length - 1) + 1);
     
     let datasets = [];
+    let labels = [];
     let plottedIdols = []; // Names of groups/members currently displayed on the graph
     
     const platformMapping = {
@@ -459,157 +488,280 @@ function renderGrowthChart() {
         tiktok: "TikTok"
     };
     const activePlatformName = platformMapping[chartPlatform] || "Instagram";
-    
     const palette = ["#9D4DFF", "#007AFF", "#FF5A79", "#34C759", "#FF9500", "#E1E1E6", "#25F4EE", "#FF8E3C", "#A28BFE", "#FD72B8"];
     
-    if (selectedIdols.length === 0) {
-        if (activeView === "group") {
-            const groupsList = idolsList.filter(i => i.type === "group");
-            const activeGroups = groupsList.filter(g => {
-                if (filterGroup !== "all" && g.group !== filterGroup) return false;
-                if (filterColor !== "all" && g.color !== filterColor) return false;
-                return true;
-            });
-            
-            activeGroups.forEach((group, idx) => {
-                const groupHistory = historyData.filter(r => r.Idol_Name.toLowerCase() === group.name.toLowerCase() && r.Platform === activePlatformName);
-                const dataPoints = dates.map(date => {
-                    const rec = groupHistory.find(r => r.Date === date);
-                    return rec ? intVal(rec.Follower_Count) : null;
+    if (chartType === "line") {
+        labels = dates;
+        if (selectedIdols.length === 0) {
+            if (activeView === "group") {
+                const groupsList = idolsList.filter(i => i.type === "group");
+                const activeGroups = groupsList.filter(g => {
+                    if (filterGroup !== "all" && g.group !== filterGroup) return false;
+                    if (filterColor !== "all" && g.color !== filterColor) return false;
+                    return true;
                 });
                 
-                datasets.push({
-                    label: group.name,
-                    data: dataPoints,
-                    borderColor: group.color || palette[idx % palette.length],
-                    backgroundColor: "transparent",
-                    tension: 0.3,
-                    borderWidth: 3,
-                    fill: false
-                });
-                plottedIdols.push(group.name);
-            });
-            
-            const groupContext = filterGroup !== "all" ? ` - ${filterGroup}` : "";
-            document.querySelector(".chart-header h2").innerText = `Official Groups Follower Growth${groupContext} (${activePlatformName})`;
-            document.querySelector(".chart-subtitle").innerText = "Displaying official channels. Select group card headers below to analyze platform distribution.";
-        } else {
-            const membersList = idolsList.filter(i => i.type === "member");
-            const activeMembers = membersList.filter(m => {
-                if (filterGroup !== "all" && m.group !== filterGroup) return false;
-                if (filterColor !== "all" && m.color !== filterColor) return false;
-                return true;
-            });
-            
-            activeMembers.forEach(m => m.latestStats = getLatestStats(m.name));
-            activeMembers.sort((a, b) => b.latestStats[activePlatformName] - a.latestStats[activePlatformName]);
-            const top10 = activeMembers.slice(0, 10);
-            
-            top10.forEach((member, idx) => {
-                const memberHistory = historyData.filter(r => r.Idol_Name.toLowerCase() === member.name.toLowerCase() && r.Platform === activePlatformName);
-                const dataPoints = dates.map(date => {
-                    const rec = memberHistory.find(r => r.Date === date);
-                    return rec ? intVal(rec.Follower_Count) : null;
+                activeGroups.forEach((group, idx) => {
+                    const groupHistory = historyData.filter(r => r.Idol_Name.toLowerCase() === group.name.toLowerCase() && r.Platform === activePlatformName);
+                    const dataPoints = dates.map(date => {
+                        const rec = groupHistory.find(r => r.Date === date);
+                        return rec ? intVal(rec.Follower_Count) : null;
+                    });
+                    
+                    datasets.push({
+                        label: group.name,
+                        data: dataPoints,
+                        borderColor: group.color || palette[idx % palette.length],
+                        backgroundColor: "transparent",
+                        tension: 0.3,
+                        borderWidth: 3,
+                        fill: false
+                    });
+                    plottedIdols.push(group.name);
                 });
                 
-                datasets.push({
-                    label: member.name,
-                    data: dataPoints,
-                    borderColor: member.color || palette[idx % palette.length],
-                    backgroundColor: "transparent",
-                    tension: 0.3,
-                    borderWidth: 2.5,
-                    fill: false
+                const groupContext = filterGroup !== "all" ? ` - ${filterGroup}` : "";
+                document.querySelector(".chart-header h2").innerText = `Official Groups Follower Growth${groupContext} (${activePlatformName})`;
+                document.querySelector(".chart-subtitle").innerText = "Displaying official channels. Select group card headers below to analyze platform distribution.";
+            } else {
+                const membersList = idolsList.filter(i => i.type === "member");
+                const activeMembers = membersList.filter(m => {
+                    if (filterGroup !== "all" && m.group !== filterGroup) return false;
+                    if (filterColor !== "all" && m.color !== filterColor) return false;
+                    return true;
                 });
-                plottedIdols.push(member.name);
-            });
-            
-            const filterContext = [];
-            if (filterGroup !== "all") filterContext.push(filterGroup);
-            if (filterColor !== "all") filterContext.push(filterColor);
-            const contextStr = filterContext.length > 0 ? ` - ${filterContext.join(", ")}` : " from All Groups";
-            
-            document.querySelector(".chart-header h2").innerText = `Top 10 Members${contextStr} (${activePlatformName})`;
-            document.querySelector(".chart-subtitle").innerText = "Displaying top members. Select member card headers below to build comparative plots.";
-        }
-        
-    } else if (selectedIdols.length === 1) {
-        const targetName = selectedIdols[0];
-        const historyList = historyData.filter(r => r.Idol_Name.toLowerCase() === targetName.toLowerCase());
-        const platforms = ["Instagram", "X", "Facebook", "TikTok"];
-        const colors = {
-            Instagram: "#FF5A79",
-            X: "#E1E1E6",
-            Facebook: "#007AFF",
-            TikTok: "#25F4EE"
-        };
-        
-        platforms.forEach(platform => {
-            const dataPoints = dates.map(date => {
-                const rec = historyList.find(r => r.Date === date && r.Platform === platform);
-                return rec ? intVal(rec.Follower_Count) : null;
-            });
-            
-            if (dataPoints.some(val => val !== null && val > 0)) {
-                datasets.push({
-                    label: platform,
-                    data: dataPoints,
-                    borderColor: colors[platform],
-                    backgroundColor: colors[platform] + "10",
-                    tension: 0.3,
-                    borderWidth: 2.5,
-                    fill: false
+                
+                activeMembers.forEach(m => m.latestStats = getLatestStats(m.name));
+                activeMembers.sort((a, b) => b.latestStats[activePlatformName] - a.latestStats[activePlatformName]);
+                const top10 = activeMembers.slice(0, 10);
+                
+                top10.forEach((member, idx) => {
+                    const memberHistory = historyData.filter(r => r.Idol_Name.toLowerCase() === member.name.toLowerCase() && r.Platform === activePlatformName);
+                    const dataPoints = dates.map(date => {
+                        const rec = memberHistory.find(r => r.Date === date);
+                        return rec ? intVal(rec.Follower_Count) : null;
+                    });
+                    
+                    datasets.push({
+                        label: member.name,
+                        data: dataPoints,
+                        borderColor: member.color || palette[idx % palette.length],
+                        backgroundColor: "transparent",
+                        tension: 0.3,
+                        borderWidth: 2.5,
+                        fill: false
+                    });
+                    plottedIdols.push(member.name);
                 });
+                
+                const filterContext = [];
+                if (filterGroup !== "all") filterContext.push(filterGroup);
+                if (filterColor !== "all") filterContext.push(filterColor);
+                const contextStr = filterContext.length > 0 ? ` - ${filterContext.join(", ")}` : " from All Groups";
+                
+                document.querySelector(".chart-header h2").innerText = `Top 10 Members${contextStr} (${activePlatformName})`;
+                document.querySelector(".chart-subtitle").innerText = "Displaying top members. Select member card headers below to build comparative plots.";
             }
-        });
-        
-        plottedIdols.push(targetName);
-        
-        // Dynamic color styling for the single selected name in graph header title
-        const idolConfig = idolsList.find(i => i.name.toLowerCase() === targetName.toLowerCase());
-        const idolColor = (idolConfig && idolConfig.color) || "#FFFFFF";
-        const typeLabel = idolConfig?.type === "group" ? "Group" : "Member";
-        
-        document.querySelector(".chart-header h2").innerHTML = `<span style="color: ${idolColor}; text-shadow: 0 0 10px color-mix(in srgb, ${idolColor} 40%, transparent);">${targetName}</span> <span style="font-size: 14px; color: var(--text-secondary);">(${typeLabel})</span> - Platform Overview`;
-        document.querySelector(".chart-subtitle").innerText = "Displaying channel distribution. Click other card headers to plot comparisons.";
-        
-    } else {
-        selectedIdols.forEach((name, idx) => {
-            const historyList = historyData.filter(r => r.Idol_Name.toLowerCase() === name.toLowerCase() && r.Platform === activePlatformName);
-            const dataPoints = dates.map(date => {
-                const rec = historyList.find(r => r.Date === date);
-                return rec ? intVal(rec.Follower_Count) : null;
+            
+        } else if (selectedIdols.length === 1) {
+            const targetName = selectedIdols[0];
+            const historyList = historyData.filter(r => r.Idol_Name.toLowerCase() === targetName.toLowerCase());
+            const platforms = ["Instagram", "X", "Facebook", "TikTok"];
+            const colors = {
+                Instagram: "#FF5A79",
+                X: "#E1E1E6",
+                Facebook: "#007AFF",
+                TikTok: "#25F4EE"
+            };
+            
+            platforms.forEach(platform => {
+                const dataPoints = dates.map(date => {
+                    const rec = historyList.find(r => r.Date === date && r.Platform === platform);
+                    return rec ? intVal(rec.Follower_Count) : null;
+                });
+                
+                if (dataPoints.some(val => val !== null && val > 0)) {
+                    datasets.push({
+                        label: platform,
+                        data: dataPoints,
+                        borderColor: colors[platform],
+                        backgroundColor: colors[platform] + "10",
+                        tension: 0.3,
+                        borderWidth: 2.5,
+                        fill: false
+                    });
+                }
             });
             
-            const idolConfig = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
-            datasets.push({
-                label: name,
-                data: dataPoints,
-                borderColor: (idolConfig && idolConfig.color) || palette[idx % palette.length],
-                backgroundColor: "transparent",
-                tension: 0.3,
-                borderWidth: 2.5,
-                fill: false
+            plottedIdols.push(targetName);
+            const idolConfig = idolsList.find(i => i.name.toLowerCase() === targetName.toLowerCase());
+            const idolColor = (idolConfig && idolConfig.color) || "#FFFFFF";
+            const typeLabel = idolConfig?.type === "group" ? "Group" : "Member";
+            
+            document.querySelector(".chart-header h2").innerHTML = `<span style="color: ${idolColor}; text-shadow: 0 0 10px color-mix(in srgb, ${idolColor} 40%, transparent);">${targetName}</span> <span style="font-size: 14px; color: var(--text-secondary);">(${typeLabel})</span> - Platform Overview`;
+            document.querySelector(".chart-subtitle").innerText = "Displaying channel distribution. Click other card headers to plot comparisons.";
+            
+        } else {
+            selectedIdols.forEach((name, idx) => {
+                const historyList = historyData.filter(r => r.Idol_Name.toLowerCase() === name.toLowerCase() && r.Platform === activePlatformName);
+                const dataPoints = dates.map(date => {
+                    const rec = historyList.find(r => r.Date === date);
+                    return rec ? intVal(rec.Follower_Count) : null;
+                });
+                
+                const idolConfig = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
+                datasets.push({
+                    label: name,
+                    data: dataPoints,
+                    borderColor: (idolConfig && idolConfig.color) || palette[idx % palette.length],
+                    backgroundColor: "transparent",
+                    tension: 0.3,
+                    borderWidth: 2.5,
+                    fill: false
+                });
+                plottedIdols.push(name);
             });
-            plottedIdols.push(name);
-        });
-        
-        // Color-code names inside graph subtitle comparison
-        const coloredNames = selectedIdols.map(name => {
-            const config = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
-            const color = (config && config.color) || "#FFFFFF";
-            return `<span style="color: ${color}; text-shadow: 0 0 8px color-mix(in srgb, ${color} 30%, transparent);">${name}</span>`;
-        }).join(", ");
-        
-        document.querySelector(".chart-header h2").innerHTML = `Comparative Plot (${activePlatformName})`;
-        document.querySelector(".chart-subtitle").innerHTML = `Tracking selected items: ${coloredNames}`;
+            
+            const coloredNames = selectedIdols.map(name => {
+                const config = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
+                const color = (config && config.color) || "#FFFFFF";
+                return `<span style="color: ${color}; text-shadow: 0 0 8px color-mix(in srgb, ${color} 30%, transparent);">${name}</span>`;
+            }).join(", ");
+            
+            document.querySelector(".chart-header h2").innerHTML = `Comparative Plot (${activePlatformName})`;
+            document.querySelector(".chart-subtitle").innerHTML = `Tracking selected items: ${coloredNames}`;
+        }
+    } else {
+        // Render Bar Chart (Latest Standings)
+        if (selectedIdols.length === 0) {
+            if (activeView === "group") {
+                const groupsList = idolsList.filter(i => i.type === "group");
+                const activeGroups = groupsList.filter(g => {
+                    if (filterGroup !== "all" && g.group !== filterGroup) return false;
+                    if (filterColor !== "all" && g.color !== filterColor) return false;
+                    return true;
+                });
+                
+                activeGroups.forEach(g => g.latestStats = getLatestStats(g.name));
+                labels = activeGroups.map(g => g.name);
+                const dataValues = activeGroups.map(g => g.latestStats[activePlatformName] || 0);
+                const barColors = activeGroups.map((g, idx) => g.color || palette[idx % palette.length]);
+                
+                datasets.push({
+                    label: `Follower Standings (${activePlatformName})`,
+                    data: dataValues,
+                    backgroundColor: barColors.map(c => c + "33"),
+                    borderColor: barColors,
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    barPercentage: 0.5,
+                    categoryPercentage: 0.8
+                });
+                plottedIdols = labels;
+                
+                const groupContext = filterGroup !== "all" ? ` - ${filterGroup}` : "";
+                document.querySelector(".chart-header h2").innerText = `Official Groups Follower Standings${groupContext} (${activePlatformName})`;
+                document.querySelector(".chart-subtitle").innerText = "Displaying latest snapshot standing metrics. Select card headers below to change parameters.";
+            } else {
+                const membersList = idolsList.filter(i => i.type === "member");
+                const activeMembers = membersList.filter(m => {
+                    if (filterGroup !== "all" && m.group !== filterGroup) return false;
+                    if (filterColor !== "all" && m.color !== filterColor) return false;
+                    return true;
+                });
+                
+                activeMembers.forEach(m => m.latestStats = getLatestStats(m.name));
+                activeMembers.sort((a, b) => b.latestStats[activePlatformName] - a.latestStats[activePlatformName]);
+                const top10 = activeMembers.slice(0, 10);
+                
+                labels = top10.map(m => m.name);
+                const dataValues = top10.map(m => m.latestStats[activePlatformName] || 0);
+                const barColors = top10.map((m, idx) => m.color || palette[idx % palette.length]);
+                
+                datasets.push({
+                    label: `Followers (${activePlatformName})`,
+                    data: dataValues,
+                    backgroundColor: barColors.map(c => c + "33"),
+                    borderColor: barColors,
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    barPercentage: 0.5,
+                    categoryPercentage: 0.8
+                });
+                plottedIdols = labels;
+                
+                const filterContext = [];
+                if (filterGroup !== "all") filterContext.push(filterGroup);
+                if (filterColor !== "all") filterContext.push(filterColor);
+                const contextStr = filterContext.length > 0 ? ` - ${filterContext.join(", ")}` : " from All Groups";
+                
+                document.querySelector(".chart-header h2").innerText = `Top 10 Members Standings${contextStr} (${activePlatformName})`;
+                document.querySelector(".chart-subtitle").innerText = "Displaying top members' latest standings. Select cards below to compare profiles.";
+            }
+        } else if (selectedIdols.length === 1) {
+            const targetName = selectedIdols[0];
+            const stats = getLatestStats(targetName);
+            labels = ["Instagram", "X", "Facebook", "TikTok"];
+            const platformColors = ["#FF5A79", "#E1E1E6", "#007AFF", "#25F4EE"];
+            const dataValues = labels.map(p => stats[p] || 0);
+            
+            datasets.push({
+                label: `Followers Count`,
+                data: dataValues,
+                backgroundColor: platformColors.map(c => c + "33"),
+                borderColor: platformColors,
+                borderWidth: 2,
+                borderRadius: 6,
+                barPercentage: 0.5,
+                categoryPercentage: 0.8
+            });
+            plottedIdols.push(targetName);
+            
+            const idolConfig = idolsList.find(i => i.name.toLowerCase() === targetName.toLowerCase());
+            const idolColor = (idolConfig && idolConfig.color) || "#FFFFFF";
+            const typeLabel = idolConfig?.type === "group" ? "Group" : "Member";
+            
+            document.querySelector(".chart-header h2").innerHTML = `<span style="color: ${idolColor}; text-shadow: 0 0 10px color-mix(in srgb, ${idolColor} 40%, transparent);">${targetName}</span> <span style="font-size: 14px; color: var(--text-secondary);">(${typeLabel})</span> - Latest Standings`;
+            document.querySelector(".chart-subtitle").innerText = "Displaying distribution standings across platforms for this item.";
+        } else {
+            labels = selectedIdols;
+            const dataValues = selectedIdols.map(name => {
+                const stats = getLatestStats(name);
+                return stats[activePlatformName] || 0;
+            });
+            const barColors = selectedIdols.map((name, idx) => {
+                const config = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
+                return (config && config.color) || palette[idx % palette.length];
+            });
+            
+            datasets.push({
+                label: `Followers (${activePlatformName})`,
+                data: dataValues,
+                backgroundColor: barColors.map(c => c + "33"),
+                borderColor: barColors,
+                borderWidth: 2,
+                borderRadius: 6,
+                barPercentage: 0.5,
+                categoryPercentage: 0.8
+            });
+            plottedIdols = selectedIdols;
+            
+            const coloredNames = selectedIdols.map(name => {
+                const config = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
+                const color = (config && config.color) || "#FFFFFF";
+                return `<span style="color: ${color}; text-shadow: 0 0 8px color-mix(in srgb, ${color} 30%, transparent);">${name}</span>`;
+            }).join(", ");
+            
+            document.querySelector(".chart-header h2").innerHTML = `Comparative Standings (${activePlatformName})`;
+            document.querySelector(".chart-subtitle").innerHTML = `Tracking selected items: ${coloredNames}`;
+        }
     }
     
     // Initialize Chart.js
     growthChart = new Chart(ctx, {
-        type: 'line',
+        type: chartType,
         data: {
-            labels: dates,
+            labels: labels,
             datasets: datasets
         },
         options: {
@@ -617,6 +769,7 @@ function renderGrowthChart() {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
+                    display: chartType === 'line',
                     position: 'top',
                     labels: {
                         boxWidth: 0, // Removes colored box/rectangle in front of text
@@ -635,13 +788,28 @@ function renderGrowthChart() {
                     borderColor: 'rgba(255,255,255,0.08)',
                     borderWidth: 1,
                     titleFont: { family: 'Outfit', weight: 'bold' },
-                    bodyFont: { family: 'Outfit' }
+                    bodyFont: { family: 'Outfit' },
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat().format(context.parsed.y);
+                            }
+                            return label;
+                        }
+                    }
                 }
             },
             scales: {
                 x: {
                     type: 'category',
-                    grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                    grid: { 
+                        display: chartType === 'line',
+                        color: 'rgba(255, 255, 255, 0.04)' 
+                    },
                     ticks: { color: '#8E8E9F', font: { family: 'Outfit' } }
                 },
                 y: {
