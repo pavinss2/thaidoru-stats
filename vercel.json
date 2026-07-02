@@ -4,6 +4,10 @@
     {
       "source": "/api/stats",
       "destination": "api/stats.py"
+    },
+    {
+      "source": "/api/init",
+      "destination": "api/init.py"
     }
   ]
 }
