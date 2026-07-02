@@ -314,11 +314,27 @@ function setupFilters() {
     });
     
     // Chart Platform Filter Change (Relocated in the graph header panel)
-    const chartSnsFilter = document.getElementById("chart-sns-select");
-    chartSnsFilter.addEventListener("change", (e) => {
-        chartPlatform = e.target.value;
-        renderGrowthChart();
+    const platformButtons = document.querySelectorAll("#platform-filter-row .platform-icon-btn");
+    platformButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            platformButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            chartPlatform = btn.getAttribute("data-platform");
+            
+            // Sync Chart header text
+            const chartHeaderHeading = document.querySelector(".chart-header h2");
+            if (chartHeaderHeading) {
+                const platformDisplayName = chartPlatform === "x" ? "X" : chartPlatform.charAt(0).toUpperCase() + chartPlatform.slice(1);
+                chartHeaderHeading.innerHTML = `<i data-lucide="trending-up"></i> Comparative Standings (${platformDisplayName})`;
+                if (window.lucide) window.lucide.createIcons();
+            }
+            
+            renderGrowthChart();
+        });
     });
+
+    // Initialize Global Autocomplete Search
+    initSearchAutocomplete();
 
     // Chart Type (Line / Bar) Toggle
     const typeButtons = document.querySelectorAll("#chart-type-toggle .toggle-btn");
@@ -459,7 +475,9 @@ function renderCard(idol, container) {
     
     card.innerHTML = `
         <div class="card-top">
-            <div class="member-avatar" ${avatarStyle}>${idol.x_avatar_url ? '' : initials}</div>
+            <a href="profile.html?name=${encodeURIComponent(idol.name)}" class="avatar-link" title="View details for ${idol.name}">
+                <div class="member-avatar" ${avatarStyle}>${idol.x_avatar_url ? '' : initials}</div>
+            </a>
             <div class="member-meta">
                 <span class="member-name">
                     ${idol.name}
@@ -648,42 +666,31 @@ function renderGrowthChart() {
         }
     }
     
-    // Keep SNS platform dropdown select wrapper visible at all times to prevent layout shifts
-    const snsWrapper = document.getElementById("chart-sns-wrapper");
-    if (snsWrapper) {
-        snsWrapper.style.display = "flex";
-    }
-
-    const chartSnsSelect = document.getElementById("chart-sns-select");
-    if (chartSnsSelect) {
-        let hasAllOption = false;
-        for (let i = 0; i < chartSnsSelect.options.length; i++) {
-            if (chartSnsSelect.options[i].value === "all") {
-                hasAllOption = true;
-                break;
-            }
-        }
-        
+    // Handle ALL Platforms button visibility based on selection count
+    const allPlatformBtn = document.querySelector('#platform-filter-row .platform-icon-btn[data-platform="all"]');
+    if (allPlatformBtn) {
         if (selectedIdols.length === 1) {
-            if (!hasAllOption) {
-                const opt = document.createElement("option");
-                opt.value = "all";
-                opt.text = "All Platforms";
-                chartSnsSelect.insertBefore(opt, chartSnsSelect.firstChild);
-                
+            if (allPlatformBtn.style.display === "none") {
+                allPlatformBtn.style.display = "flex";
                 chartPlatform = "all";
-                chartSnsSelect.value = "all";
             }
         } else {
-            if (hasAllOption) {
-                chartSnsSelect.remove(0);
-            }
+            allPlatformBtn.style.display = "none";
             if (chartPlatform === "all") {
                 chartPlatform = "instagram";
-                chartSnsSelect.value = "instagram";
             }
         }
     }
+
+    // Sync active button highlights in platform icons row
+    const platformButtons = document.querySelectorAll("#platform-filter-row .platform-icon-btn");
+    platformButtons.forEach(btn => {
+        if (btn.getAttribute("data-platform") === chartPlatform) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    });
     
     // Slice historical dates by Date Range selection
     const fullDates = [...new Set(historyData.map(r => r.Date))].sort();
@@ -935,4 +942,114 @@ function renderGrowthChart() {
 
 function intVal(val) {
     return parseInt(val || 0, 10);
+}
+
+function initSearchAutocomplete() {
+    const searchInput = document.getElementById("global-search-input");
+    const suggestionsBox = document.getElementById("search-suggestions");
+    if (!searchInput || !suggestionsBox) return;
+
+    let highlightedIndex = -1;
+    let currentSuggestions = [];
+
+    searchInput.addEventListener("input", (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (!query) {
+            suggestionsBox.innerHTML = "";
+            suggestionsBox.classList.remove("active");
+            highlightedIndex = -1;
+            return;
+        }
+
+        // Filter groups and members matching name or group
+        currentSuggestions = idolsList.filter(idol => {
+            const nameMatch = idol.name.toLowerCase().includes(query);
+            const groupMatch = idol.group && idol.group.toLowerCase().includes(query);
+            return nameMatch || groupMatch;
+        });
+
+        if (currentSuggestions.length === 0) {
+            suggestionsBox.innerHTML = '<div class="no-suggestions-row">No matching members found</div>';
+            suggestionsBox.classList.add("active");
+            highlightedIndex = -1;
+            return;
+        }
+
+        suggestionsBox.innerHTML = "";
+        currentSuggestions.forEach((idol, index) => {
+            const row = document.createElement("div");
+            row.classList.add("suggestion-row");
+            row.setAttribute("data-index", index);
+            
+            const initials = idol.name.slice(0, 2).toUpperCase();
+            const avatarStyle = idol.x_avatar_url 
+                ? `style="background-image: url('${idol.x_avatar_url}');"`
+                : '';
+                
+            row.innerHTML = `
+                <div class="suggestion-avatar" ${avatarStyle}>${idol.x_avatar_url ? '' : initials}</div>
+                <div class="suggestion-info">
+                    <span class="suggestion-name">${idol.name}</span>
+                    <span class="suggestion-group">${idol.type === "group" ? "Official Channel" : idol.group}</span>
+                </div>
+            `;
+            
+            row.addEventListener("click", () => {
+                window.location.href = `profile.html?name=${encodeURIComponent(idol.name)}`;
+            });
+            
+            suggestionsBox.appendChild(row);
+        });
+
+        suggestionsBox.classList.add("active");
+        highlightedIndex = -1;
+    });
+
+    // Handle Keyboard navigation
+    searchInput.addEventListener("keydown", (e) => {
+        const rows = suggestionsBox.querySelectorAll(".suggestion-row");
+        if (!suggestionsBox.classList.contains("active") || rows.length === 0) return;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            highlightedIndex = (highlightedIndex + 1) % rows.length;
+            updateHighlight(rows);
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            highlightedIndex = (highlightedIndex - 1 + rows.length) % rows.length;
+            updateHighlight(rows);
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            if (highlightedIndex >= 0 && highlightedIndex < currentSuggestions.length) {
+                const selected = currentSuggestions[highlightedIndex];
+                window.location.href = `profile.html?name=${encodeURIComponent(selected.name)}`;
+            } else if (currentSuggestions.length > 0) {
+                window.location.href = `profile.html?name=${encodeURIComponent(currentSuggestions[0].name)}`;
+            }
+        } else if (e.key === "Escape") {
+            suggestionsBox.innerHTML = "";
+            suggestionsBox.classList.remove("active");
+            highlightedIndex = -1;
+        }
+    });
+
+    function updateHighlight(rows) {
+        rows.forEach((row, index) => {
+            if (index === highlightedIndex) {
+                row.classList.add("highlighted");
+                row.scrollIntoView({ block: "nearest" });
+            } else {
+                row.classList.remove("highlighted");
+            }
+        });
+    }
+
+    // Close suggestion box when clicking outside
+    document.addEventListener("click", (e) => {
+        if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+            suggestionsBox.innerHTML = "";
+            suggestionsBox.classList.remove("active");
+            highlightedIndex = -1;
+        }
+    });
 }

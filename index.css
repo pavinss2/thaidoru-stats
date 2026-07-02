@@ -854,3 +854,332 @@ a.platform-metric:hover {
     font-family: var(--font-primary);
     font-weight: 600;
 }
+
+/* ==========================================
+   Global Autocomplete Search Bar
+   ========================================== */
+.global-search-container {
+    position: relative;
+    width: 320px;
+    margin-left: auto;
+}
+
+.search-input-wrapper {
+    background: rgba(20, 20, 25, 0.8);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    gap: 10px;
+    transition: var(--transition-smooth);
+}
+
+.search-input-wrapper:focus-within {
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 12px rgba(157, 77, 255, 0.25);
+    background: rgba(25, 25, 30, 0.9);
+}
+
+.search-input-wrapper .search-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--text-secondary);
+}
+
+.search-input-wrapper input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: white;
+    font-family: var(--font-primary);
+    font-size: 13px;
+    width: 100%;
+}
+
+.search-input-wrapper input::placeholder {
+    color: var(--text-muted);
+}
+
+.search-suggestions-box {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    right: 0;
+    background: #0D0D11;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 999;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    display: none;
+}
+
+.search-suggestions-box.active {
+    display: block;
+}
+
+.suggestion-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    gap: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    transition: var(--transition-smooth);
+}
+
+.suggestion-row:last-child {
+    border-bottom: none;
+}
+
+.suggestion-row:hover, .suggestion-row.highlighted {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.suggestion-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.suggestion-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.suggestion-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.suggestion-group {
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+.no-suggestions-row {
+    padding: 14px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* ==========================================
+   Platform Filter Icons
+   ========================================== */
+.platform-icons-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.platform-icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: var(--transition-smooth);
+}
+
+.platform-icon-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.platform-icon-btn.active[data-platform="all"] {
+    background: var(--accent-purple);
+    border-color: var(--accent-purple);
+    color: white;
+    box-shadow: 0 0 12px rgba(157, 77, 255, 0.35);
+}
+
+.platform-icon-btn.active[data-platform="instagram"] {
+    background: #FF85B3;
+    border-color: #FF85B3;
+    color: white;
+    box-shadow: 0 0 12px rgba(255, 133, 179, 0.45);
+}
+
+.platform-icon-btn.active[data-platform="x"] {
+    background: #E1E1E6;
+    border-color: #E1E1E6;
+    color: #121216;
+    box-shadow: 0 0 12px rgba(225, 225, 230, 0.45);
+}
+
+.platform-icon-btn.active[data-platform="facebook"] {
+    background: #5C9CFF;
+    border-color: #5C9CFF;
+    color: white;
+    box-shadow: 0 0 12px rgba(92, 156, 255, 0.45);
+}
+
+.platform-icon-btn.active[data-platform="tiktok"] {
+    background: #4DF2EE;
+    border-color: #4DF2EE;
+    color: #121216;
+    box-shadow: 0 0 12px rgba(77, 242, 238, 0.45);
+}
+
+.platform-icon-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+/* ==========================================
+   Member Profile Details Page
+   ========================================== */
+.profile-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.profile-sidebar {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: fit-content;
+}
+
+.profile-avatar-large {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 3px solid var(--member-color, white);
+    box-shadow: 0 0 25px color-mix(in srgb, var(--member-color, white) 45%, transparent);
+    background-size: cover;
+    background-position: center;
+    margin-bottom: 20px;
+    background-color: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    font-weight: 800;
+    color: white;
+}
+
+.profile-title-row {
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.profile-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.profile-name .color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--member-color, white);
+    box-shadow: 0 0 8px var(--member-color, white);
+    display: inline-block;
+}
+
+.profile-badge-row {
+    margin-bottom: 20px;
+}
+
+.profile-meta-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+}
+
+.profile-meta-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.profile-meta-label {
+    color: var(--text-secondary);
+}
+
+.profile-meta-value {
+    font-weight: 600;
+    color: white;
+}
+
+.profile-platforms-vertical {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+}
+
+.home-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: var(--transition-smooth);
+}
+
+.home-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Responsive adjustment for Profile view */
+@media (max-width: 900px) {
+    .profile-layout {
+        grid-template-columns: 1fr;
+    }
+    .profile-sidebar {
+        width: 100%;
+    }
+    .global-search-container {
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
