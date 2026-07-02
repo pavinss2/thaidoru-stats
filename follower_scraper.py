@@ -377,15 +377,17 @@ def save_results_to_postgres(results, url):
     print("Successfully updated follower history in SQL database.")
 
 def synthesize_missing_data_postgres(url):
-    print("Connecting to PostgreSQL database to run linear data synthesis...")
+    print("Connecting to PostgreSQL database to run data synthesis...")
     import psycopg2
     import psycopg2.extras
+    import random
+    
     conn = psycopg2.connect(url)
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
     cursor.execute("SELECT DISTINCT date FROM follower_history ORDER BY date ASC;")
     dates = [row['date'] for row in cursor.fetchall()]
-    if len(dates) < 3:
+    if len(dates) < 2:
         cursor.close()
         conn.close()
         return
@@ -396,47 +398,61 @@ def synthesize_missing_data_postgres(url):
     cursor.execute("""
         SELECT date, timestamp, idol_name, platform, username, follower_count 
         FROM follower_history 
-        WHERE date IN (%s, %s) OR date < %s;
-    """, (today, previous_day, previous_day))
+        WHERE date IN (%s, %s);
+    """, (today, previous_day))
     rows = cursor.fetchall()
     
-    keys = set((r['idol_name'], r['platform']) for r in rows)
-    synthesized_count = 0
+    cursor.execute("""
+        SELECT DISTINCT idol_name, platform, username
+        FROM follower_history;
+    """)
+    channels = cursor.fetchall()
     
-    for idol_name, platform in keys:
-        prev_record = next((r for r in rows if r['date'] == previous_day and r['idol_name'] == idol_name and r['platform'] == platform), None)
+    synthesized_count = 0
+    adjusted_count = 0
+    
+    for ch in channels:
+        idol_name = ch['idol_name']
+        platform = ch['platform']
+        username = ch['username']
         
-        if not prev_record or not prev_record['follower_count'] or prev_record['follower_count'] == 0:
-            current_record = next((r for r in rows if r['date'] == today and r['idol_name'] == idol_name and r['platform'] == platform), None)
+        today_rec = next((r for r in rows if r['date'] == today and r['idol_name'] == idol_name and r['platform'] == platform), None)
+        prev_rec = next((r for r in rows if r['date'] == previous_day and r['idol_name'] == idol_name and r['platform'] == platform), None)
+        
+        # Rule 2: If yesterday is missing, synthesize yesterday = today - random(1..5)
+        if today_rec and today_rec['follower_count'] and (not prev_rec or not prev_rec['follower_count']):
+            today_val = today_rec['follower_count']
+            synth_val = today_val - random.randint(1, 5)
             
-            if current_record and current_record['follower_count'] and current_record['follower_count'] > 0:
-                current_val = current_record['follower_count']
-                username = current_record['username']
+            cursor.execute("""
+                INSERT INTO follower_history (date, timestamp, idol_name, platform, username, follower_count)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (date, idol_name, platform) DO UPDATE
+                SET follower_count = EXCLUDED.follower_count, timestamp = EXCLUDED.timestamp;
+            """, (previous_day, '12:00:00', idol_name, platform, username, synth_val))
+            print(f"Synthesized missing count for {idol_name} ({platform}) on {previous_day}: {synth_val}")
+            synthesized_count += 1
+            prev_rec = {'date': previous_day, 'follower_count': synth_val}
+            
+        # Rule 1: If today is less than yesterday, adjust today = yesterday + random(1..5)
+        if today_rec and prev_rec and today_rec['follower_count'] and prev_rec['follower_count']:
+            today_val = today_rec['follower_count']
+            prev_val = prev_rec['follower_count']
+            
+            if today_val < prev_val:
+                adjusted_val = prev_val + random.randint(1, 5)
+                cursor.execute("""
+                    UPDATE follower_history 
+                    SET follower_count = %s
+                    WHERE date = %s AND idol_name = %s AND platform = %s;
+                """, (adjusted_val, today, idol_name, platform))
+                print(f"Adjusted data drop for {idol_name} ({platform}) on {today}: {today_val} -> {adjusted_val}")
+                adjusted_count += 1
                 
-                older_records = [r for r in rows if r['date'] < previous_day and r['idol_name'] == idol_name and r['platform'] == platform]
-                older_records.sort(key=lambda x: x['date'], reverse=True)
-                
-                if older_records:
-                    prev_available_rec = older_records[0]
-                    prev_val = prev_available_rec['follower_count']
-                    
-                    if prev_val > 0:
-                        synth_val = int((prev_val + current_val) / 2)
-                        
-                        cursor.execute("""
-                            INSERT INTO follower_history (date, timestamp, idol_name, platform, username, follower_count)
-                            VALUES (%s, %s, %s, %s, %s, %s)
-                            ON CONFLICT (date, idol_name, platform) DO UPDATE
-                            SET follower_count = EXCLUDED.follower_count, timestamp = EXCLUDED.timestamp;
-                        """, (previous_day, '12:00:00', idol_name, platform, username, synth_val))
-                        print(f"Synthesized missing count for {idol_name} ({platform}) on {previous_day}: {synth_val}")
-                        synthesized_count += 1
-                        
     conn.commit()
     cursor.close()
     conn.close()
-    if synthesized_count > 0:
-        print(f"Successfully synthesized {synthesized_count} missing records in SQL database.")
+    print(f"Data synthesis complete. Synthesized: {synthesized_count}, Adjusted: {adjusted_count}")
 
 # ========================================================
 # Local CSV Data Saving & Synthesis Fallback Pipelines
@@ -749,6 +765,9 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
 
     if db_sync_error:
         raise db_sync_error
+
+    if failed_channels:
+        raise ValueError(f"Scrape completed with {len(failed_channels)} failed channels.")
 
 def send_consolidated_alert(phase: str, config_path: str = "idols.json"):
     today_str = datetime.today().strftime('%Y-%m-%d')
