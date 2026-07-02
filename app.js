@@ -239,7 +239,30 @@ function setupFilters() {
             pills.forEach(p => p.classList.remove("active"));
             pill.classList.add("active");
             activeView = pill.getAttribute("data-view");
-            selectedIdols = []; // Clear selection when view mode changes
+            
+            if (activeView === "group") {
+                const groupsList = idolsList.filter(i => i.type === "group");
+                selectedIdols = groupsList.map(g => g.name);
+            } else {
+                const membersList = idolsList.filter(i => i.type === "member");
+                const activeMembers = membersList.filter(m => {
+                    if (filterGroup !== "all" && m.group !== filterGroup) return false;
+                    if (filterColor !== "all" && m.color !== filterColor) return false;
+                    return true;
+                });
+                const platformMapping = {
+                    instagram: "Instagram",
+                    x: "X",
+                    facebook: "Facebook",
+                    tiktok: "TikTok",
+                    all: "Instagram"
+                };
+                const activeSns = platformMapping[chartPlatform] || "Instagram";
+                activeMembers.forEach(m => m.latestStats = getLatestStats(m.name));
+                activeMembers.sort((a, b) => b.latestStats[activeSns] - a.latestStats[activeSns]);
+                const top10 = activeMembers.slice(0, 10);
+                selectedIdols = top10.map(m => m.name);
+            }
             
             // Reset color filter action when toggling view tabs
             filterColor = "all";
@@ -771,10 +794,10 @@ function renderGrowthChart() {
                 ? ["Instagram", "X", "Facebook", "TikTok"] 
                 : [platformMapping[chartPlatform]];
             const platformColorsMap = {
-                Instagram: "#FF5A79",
+                Instagram: "#FF85B3",
                 X: "#E1E1E6",
-                Facebook: "#007AFF",
-                TikTok: "#25F4EE"
+                Facebook: "#5C9CFF",
+                TikTok: "#4DF2EE"
             };
             const dataValues = labels.map(p => stats[p] || 0);
             const barColors = labels.map(p => platformColorsMap[p]);
@@ -782,7 +805,7 @@ function renderGrowthChart() {
             datasets.push({
                 label: "Followers",
                 data: dataValues,
-                backgroundColor: barColors.map(c => c + "33"),
+                backgroundColor: barColors,
                 borderColor: barColors,
                 borderWidth: 2,
                 borderRadius: 6,
@@ -815,7 +838,7 @@ function renderGrowthChart() {
             datasets.push({
                 label: "Followers",
                 data: dataValues,
-                backgroundColor: barColors.map(c => c + "33"),
+                backgroundColor: barColors,
                 borderColor: barColors,
                 borderWidth: 2,
                 borderRadius: 6,
