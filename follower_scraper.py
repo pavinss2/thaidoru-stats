@@ -504,7 +504,7 @@ def synthesize_missing_data(csv_path):
 # ========================================================
 # Main Execution Loop
 # ========================================================
-def run_scraper(config_path: str, output_path: str, target_platform: str = None):
+def run_scraper(config_path: str, output_path: str, target_platform: str = None, failed_file: str = None):
     if not os.path.exists(config_path):
         print(f"Error: Configuration file '{config_path}' not found.")
         return
@@ -513,7 +513,41 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None)
         idols = json.load(f)
         
     active_idols = [i for i in idols if i.get("active") is not False]
-    print(f"Loaded {len(active_idols)} active profiles to scrape...")
+    
+    # Filter active_idols to only those failed channels if failed_file is provided
+    failed_list = []
+    if failed_file and os.path.exists(failed_file):
+        try:
+            with open(failed_file, 'r', encoding='utf-8') as f:
+                failed_list = json.load(f) # List of [name, platform]
+            print(f"Filtering run to retry {len(failed_list)} failed channels from '{failed_file}'...")
+        except Exception as e:
+            print(f"Error reading failed file '{failed_file}': {e}")
+            
+    if failed_list:
+        failed_map = {}
+        for name, platform in failed_list:
+            failed_map.setdefault(name.lower(), set()).add(platform.lower())
+            
+        filtered_idols = []
+        for idol in active_idols:
+            name_lower = idol.get("name", "").lower()
+            if name_lower in failed_map:
+                # Copy idol to avoid mutating configuration file on disk
+                idol_copy = dict(idol)
+                platforms = failed_map[name_lower]
+                
+                # Keep only platforms listed in the failed list
+                if "instagram" not in platforms: idol_copy["instagram_handle"] = None
+                if "x" not in platforms: idol_copy["x_handle"] = None
+                if "facebook" not in platforms: idol_copy["facebook_page"] = None
+                if "tiktok" not in platforms: idol_copy["tiktok_handle"] = None
+                
+                filtered_idols.append(idol_copy)
+        active_idols = filtered_idols
+        print(f"Retrying scraping for {len(active_idols)} profiles matching failed platforms.")
+    else:
+        print(f"Loaded {len(active_idols)} active profiles to scrape...")
     if target_platform:
         print(f"Limiting scraping to platform: {target_platform}")
         
@@ -524,6 +558,18 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None)
     
     # Load today's backups
     postgres_url = os.environ.get("POSTGRES_URL")
+    if not postgres_url:
+        print("WARNING: POSTGRES_URL environment variable is NOT set.")
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            print("::error::POSTGRES_URL secret is NOT configured in GitHub Repository Secrets. Follower data cannot be saved to PostgreSQL!")
+            print("=========================================================================")
+            print("To fix this:")
+            print("1. Go to your GitHub repository: Settings -> Secrets and variables -> Actions")
+            print("2. Click 'New repository secret'")
+            print("3. Name: POSTGRES_URL")
+            print("4. Value: postgresql://neondb_owner:REDACTED_DB_PASS@ep-flat-dew-ai5tluqc-pooler.c-4.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require")
+            print("=========================================================================")
+            
     if postgres_url:
         today_backups = get_today_backup_postgres(postgres_url, today_str)
     else:
@@ -598,6 +644,7 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None)
             synthesize_missing_data_postgres(postgres_url)
         except Exception as e:
             print(f"Error saving stats to PostgreSQL: {e}")
+            raise e
     else:
         # Fallback to local CSV
         existing_rows = []
@@ -647,6 +694,7 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None)
     except Exception as e:
         print(f"Error saving idols configuration: {e}")
 
+    failed_channels = []
     # Calculate stats and send Lark notification
     try:
         expected_channels = []
@@ -664,7 +712,6 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None)
                 if idol.get("tiktok_handle"): expected_channels.append((name, "TikTok"))
 
         # Track failures by scanning alerts log
-        failed_channels = []
         for alert in all_alerts:
             if "Scrape Error for" in alert:
                 parts = alert.split(" Scrape Error for ")
@@ -714,6 +761,23 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None)
         print(f"Lark notification sent. Status: {res.status_code}")
     except Exception as le:
         print(f"Error sending Lark notification: {le}")
+
+    # Write failed channels to failed_scrapes.json if any failed, otherwise clear/delete the file
+    failed_scrapes_path = "failed_scrapes.json"
+    if failed_channels:
+        try:
+            with open(failed_scrapes_path, "w", encoding="utf-8") as f:
+                json.dump(failed_channels, f, indent=2)
+            print(f"Logged {len(failed_channels)} failed channels to '{failed_scrapes_path}' for retry.")
+        except Exception as e:
+            print(f"Error logging failed channels: {e}")
+    else:
+        if os.path.exists(failed_scrapes_path):
+            try:
+                os.remove(failed_scrapes_path)
+                print(f"No failed channels. Cleared '{failed_scrapes_path}'.")
+            except Exception as e:
+                print(f"Error removing failed scrapes file: {e}")
 
 def test_single_idol(name: str, config_path: str):
     if not os.path.exists(config_path):
@@ -765,11 +829,12 @@ if __name__ == '__main__':
     parser.add_argument("--test", type=str, help="Test scraping a single idol by name from the config (e.g. --test Ame).")
     parser.add_argument("--config", default="idols.json", help="Path to configuration JSON file (default: idols.json).")
     parser.add_argument("--output", default="follower_history.csv", help="Path to follower history CSV file (default: follower_history.csv).")
+    parser.add_argument("--failed-file", default=None, help="JSON file containing list of failed channels to retry.")
     
     args = parser.parse_args()
     
     if args.run:
-        run_scraper(args.config, args.output, args.platform)
+        run_scraper(args.config, args.output, args.platform, args.failed_file)
     elif args.test:
         test_single_idol(args.test, args.config)
     else:
