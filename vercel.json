@@ -4,10 +4,6 @@
     {
       "source": "/api/stats",
       "destination": "api/stats.py"
-    },
-    {
-      "source": "/api/reveal_secret",
-      "destination": "api/reveal_secret.py"
     }
   ]
 }
