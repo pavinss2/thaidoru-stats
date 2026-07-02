@@ -647,6 +647,74 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None)
     except Exception as e:
         print(f"Error saving idols configuration: {e}")
 
+    # Calculate stats and send Lark notification
+    try:
+        expected_channels = []
+        for idol in active_idols:
+            name = idol.get("name")
+            if target_platform:
+                if target_platform.lower() == "x" and idol.get("x_handle"): expected_channels.append((name, "X"))
+                elif target_platform.lower() == "instagram" and idol.get("instagram_handle"): expected_channels.append((name, "Instagram"))
+                elif target_platform.lower() == "facebook" and idol.get("facebook_page"): expected_channels.append((name, "Facebook"))
+                elif target_platform.lower() == "tiktok" and idol.get("tiktok_handle"): expected_channels.append((name, "TikTok"))
+            else:
+                if idol.get("x_handle"): expected_channels.append((name, "X"))
+                if idol.get("instagram_handle"): expected_channels.append((name, "Instagram"))
+                if idol.get("facebook_page"): expected_channels.append((name, "Facebook"))
+                if idol.get("tiktok_handle"): expected_channels.append((name, "TikTok"))
+
+        # Track failures by scanning alerts log
+        failed_channels = []
+        for alert in all_alerts:
+            if "Scrape Error for" in alert:
+                parts = alert.split(" Scrape Error for ")
+                if len(parts) == 2:
+                    platform = parts[0].strip()
+                    name_part = parts[1].split(" (")[0].strip()
+                    failed_channels.append((name_part, platform))
+            elif "Playwright initialization error" in alert:
+                for name, platform in expected_channels:
+                    if platform == "TikTok":
+                        failed_channels.append((name, "TikTok"))
+
+        # Remove duplicates from failed_channels
+        failed_channels = sorted(list(set(failed_channels)))
+        
+        # Calculate counts
+        total_expected = len(expected_channels)
+        total_failed = len(failed_channels)
+        total_success = total_expected - total_failed
+
+        # Prepare message body
+        status_emoji = "✅" if total_failed == 0 else "⚠️"
+        msg_lines = [
+            f"{status_emoji} *Idol Follower Scraper Run Summary*",
+            f"Date: {today_str}",
+            f"Status: {'Success' if total_failed == 0 else 'Completed with Warnings'}",
+            f"Total Expected Channels: {total_expected}",
+            f"Successfully Scraped: {total_success} channels",
+            f"Failed/Missing: {total_failed} channels"
+        ]
+        
+        if total_failed > 0:
+            msg_lines.append("\n*Missing/Failed Accounts:*")
+            for name, platform in failed_channels:
+                msg_lines.append(f"• {name} ({platform})")
+                
+        # Send to Lark
+        lark_webhook = "https://open.larksuite.com/open-apis/bot/v2/hook/a870d338-0431-4d97-ac37-e022e16a3c46"
+        import requests
+        payload = {
+            "msg_type": "text",
+            "content": {
+                "text": "\n".join(msg_lines)
+            }
+        }
+        res = requests.post(lark_webhook, json=payload, headers={"Content-Type": "application/json"}, timeout=10)
+        print(f"Lark notification sent. Status: {res.status_code}")
+    except Exception as le:
+        print(f"Error sending Lark notification: {le}")
+
 def test_single_idol(name: str, config_path: str):
     if not os.path.exists(config_path):
         print(f"Error: Configuration file '{config_path}' not found.")
