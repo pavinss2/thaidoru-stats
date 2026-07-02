@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             const latest = sortedHistory[sortedHistory.length - 1];
             const timeStr = latest.Timestamp ? ` @ ${latest.Timestamp}` : "";
-            document.getElementById("last-updated").innerText = `Last Scraped: ${latest.Date}${timeStr}`;
+            document.getElementById("last-updated").innerText = `Last Update: ${latest.Date}${timeStr}`;
         }
         
         // Initial setup and render
