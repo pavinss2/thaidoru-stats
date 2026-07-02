@@ -352,8 +352,8 @@ function renderProfileChart() {
     
     // Set Header Text
     const activePlatformName = platformMapping[chartPlatform];
-    document.getElementById("chart-title").innerHTML = `<i data-lucide="trending-up"></i> ${memberProfile.name} (${activePlatformName})`;
-    document.getElementById("chart-sub").innerText = `Tracing growth metrics across historical dates for ${memberProfile.name}`;
+    document.getElementById("chart-title").innerHTML = `${memberProfile.name} (${activePlatformName})`;
+    document.getElementById("chart-sub").innerText = `Followers`;
     if (window.lucide) window.lucide.createIcons();
 
     let datasets = [];
