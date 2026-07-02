@@ -217,18 +217,42 @@ function setupFilters() {
             pill.classList.add("active");
             activeView = pill.getAttribute("data-view");
             selectedIdols = []; // Clear selection when view mode changes
+            
+            // Reset color filter action when toggling view tabs
+            filterColor = "all";
+            const colorFilterSelect = document.getElementById("color-filter-select");
+            if (colorFilterSelect) {
+                colorFilterSelect.value = "all";
+            }
+            
             filterAndRender();
             renderGrowthChart();
         });
     });
     
-    // Directory Group Filter Change
+    // Directory Group Filter Change (Synchronized across Member and Group tabs)
     const groupFilter = document.getElementById("group-filter-select");
-    groupFilter.addEventListener("change", (e) => {
-        filterGroup = e.target.value;
+    const groupFilterGroupTab = document.getElementById("group-filter-select-group-tab");
+    
+    function updateGroupFilter(val) {
+        filterGroup = val;
+        if (groupFilter) groupFilter.value = val;
+        if (groupFilterGroupTab) groupFilterGroupTab.value = val;
         filterAndRender();
         renderGrowthChart();
-    });
+    }
+    
+    if (groupFilter) {
+        groupFilter.addEventListener("change", (e) => {
+            updateGroupFilter(e.target.value);
+        });
+    }
+    
+    if (groupFilterGroupTab) {
+        groupFilterGroupTab.addEventListener("change", (e) => {
+            updateGroupFilter(e.target.value);
+        });
+    }
     
     // Directory Color Filter Change
     const colorFilter = document.getElementById("color-filter-select");
