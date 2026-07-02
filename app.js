@@ -537,6 +537,37 @@ function renderGrowthChart() {
     if (snsWrapper) {
         snsWrapper.style.display = "flex";
     }
+
+    const chartSnsSelect = document.getElementById("chart-sns-select");
+    if (chartSnsSelect) {
+        let hasAllOption = false;
+        for (let i = 0; i < chartSnsSelect.options.length; i++) {
+            if (chartSnsSelect.options[i].value === "all") {
+                hasAllOption = true;
+                break;
+            }
+        }
+        
+        if (selectedIdols.length === 1) {
+            if (!hasAllOption) {
+                const opt = document.createElement("option");
+                opt.value = "all";
+                opt.text = "All Platforms";
+                chartSnsSelect.insertBefore(opt, chartSnsSelect.firstChild);
+                
+                chartPlatform = "all";
+                chartSnsSelect.value = "all";
+            }
+        } else {
+            if (hasAllOption) {
+                chartSnsSelect.remove(0);
+            }
+            if (chartPlatform === "all") {
+                chartPlatform = "instagram";
+                chartSnsSelect.value = "instagram";
+            }
+        }
+    }
     
     // Slice historical dates by Date Range selection
     const fullDates = [...new Set(historyData.map(r => r.Date))].sort();
@@ -549,6 +580,7 @@ function renderGrowthChart() {
     let plottedIdols = []; // Names of groups/members currently displayed on the graph
     
     const platformMapping = {
+        all: "All Platforms",
         instagram: "Instagram",
         x: "X",
         facebook: "Facebook",
@@ -633,7 +665,9 @@ function renderGrowthChart() {
         } else if (selectedIdols.length === 1) {
             const targetName = selectedIdols[0];
             const historyList = historyData.filter(r => r.Idol_Name.toLowerCase() === targetName.toLowerCase());
-            const platforms = ["Instagram", "X", "Facebook", "TikTok"];
+            const platforms = chartPlatform === "all" 
+                ? ["Instagram", "X", "Facebook", "TikTok"] 
+                : [platformMapping[chartPlatform]];
             const colors = {
                 Instagram: "#FF5A79",
                 X: "#E1E1E6",
@@ -768,15 +802,23 @@ function renderGrowthChart() {
         } else if (selectedIdols.length === 1) {
             const targetName = selectedIdols[0];
             const stats = getLatestStats(targetName);
-            labels = ["Instagram", "X", "Facebook", "TikTok"];
-            const platformColors = ["#FF5A79", "#E1E1E6", "#007AFF", "#25F4EE"];
+            labels = chartPlatform === "all" 
+                ? ["Instagram", "X", "Facebook", "TikTok"] 
+                : [platformMapping[chartPlatform]];
+            const platformColorsMap = {
+                Instagram: "#FF5A79",
+                X: "#E1E1E6",
+                Facebook: "#007AFF",
+                TikTok: "#25F4EE"
+            };
             const dataValues = labels.map(p => stats[p] || 0);
+            const barColors = labels.map(p => platformColorsMap[p]);
             
             datasets.push({
                 label: "Followers",
                 data: dataValues,
-                backgroundColor: platformColors.map(c => c + "33"),
-                borderColor: platformColors,
+                backgroundColor: barColors.map(c => c + "33"),
+                borderColor: barColors,
                 borderWidth: 2,
                 borderRadius: 6,
                 barPercentage: 0.5,
