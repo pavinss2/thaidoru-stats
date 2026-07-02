@@ -505,6 +505,8 @@ def synthesize_missing_data(csv_path):
 # Main Execution Loop
 # ========================================================
 def run_scraper(config_path: str, output_path: str, target_platform: str = None, failed_file: str = None):
+    db_sync_status = "Skipped (Fallback to CSV)"
+    db_sync_error = None
     if not os.path.exists(config_path):
         print(f"Error: Configuration file '{config_path}' not found.")
         return
@@ -642,9 +644,11 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
         try:
             save_results_to_postgres(results, postgres_url)
             synthesize_missing_data_postgres(postgres_url)
+            db_sync_status = "Success"
         except Exception as e:
             print(f"Error saving stats to PostgreSQL: {e}")
-            raise e
+            db_sync_status = f"Failed ({e})"
+            db_sync_error = e
     else:
         # Fallback to local CSV
         existing_rows = []
@@ -738,6 +742,7 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
             f"{status_emoji} *Idol Follower Scraper Run Summary*",
             f"Date: {today_str}",
             f"Status: {'Success' if total_failed == 0 else 'Completed with Warnings'}",
+            f"Database Sync: {db_sync_status}",
             f"Total Expected Channels: {total_expected}",
             f"Successfully Scraped: {total_success} channels",
             f"Failed/Missing: {total_failed} channels"
@@ -778,6 +783,9 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
                 print(f"No failed channels. Cleared '{failed_scrapes_path}'.")
             except Exception as e:
                 print(f"Error removing failed scrapes file: {e}")
+
+    if db_sync_error:
+        raise db_sync_error
 
 def test_single_idol(name: str, config_path: str):
     if not os.path.exists(config_path):
