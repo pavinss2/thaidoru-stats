@@ -797,6 +797,32 @@ def send_consolidated_alert(phase: str, config_path: str = "idols.json"):
     total_failed = len(failed_channels_unique)
     total_success = total_expected - total_failed
     
+    # Count expected/failed/success by platform
+    platform_expected = {"Instagram": 0, "X": 0, "Facebook": 0, "TikTok": 0}
+    platform_failed = {"Instagram": 0, "X": 0, "Facebook": 0, "TikTok": 0}
+    
+    def normalize_plat(p):
+        p_lower = p.lower()
+        if p_lower == "x": return "X"
+        if p_lower == "instagram": return "Instagram"
+        if p_lower == "facebook": return "Facebook"
+        if p_lower == "tiktok": return "TikTok"
+        return p.title()
+        
+    for name, plat in expected_channels:
+        plat_key = normalize_plat(plat)
+        if plat_key in platform_expected:
+            platform_expected[plat_key] += 1
+            
+    for name, plat in failed_channels_unique:
+        plat_key = normalize_plat(plat)
+        if plat_key in platform_failed:
+            platform_failed[plat_key] += 1
+            
+    platform_success = {}
+    for plat in platform_expected:
+        platform_success[plat] = platform_expected[plat] - platform_failed[plat]
+        
     status_emoji = "✅" if total_failed == 0 else "⚠️"
     phase_title = "Primary Scrape Summary" if phase == "initial" else "Final Daily Run Summary"
     
@@ -804,9 +830,9 @@ def send_consolidated_alert(phase: str, config_path: str = "idols.json"):
         f"{status_emoji} *Idol Follower Scraper - {phase_title}*",
         f"Date: {today_str}",
         f"Status: {'Success' if total_failed == 0 else 'Completed with Warnings'}",
-        f"Total Expected Channels: {total_expected}",
-        f"Successfully Scraped: {total_success} channels",
-        f"Failed/Missing: {total_failed} channels"
+        f"Total Expected Channels: {total_expected} (IG: {platform_expected['Instagram']}, X: {platform_expected['X']}, FB: {platform_expected['Facebook']}, TT: {platform_expected['TikTok']})",
+        f"Successfully Scraped: {total_success} (IG: {platform_success['Instagram']}, X: {platform_success['X']}, FB: {platform_success['Facebook']}, TT: {platform_success['TikTok']})",
+        f"Failed/Missing: {total_failed} (IG: {platform_failed['Instagram']}, X: {platform_failed['X']}, FB: {platform_failed['Facebook']}, TT: {platform_failed['TikTok']})"
     ]
     
     if total_failed > 0:
