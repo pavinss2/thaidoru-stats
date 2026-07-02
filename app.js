@@ -844,6 +844,7 @@ function renderGrowthChart() {
                     ticks: { color: '#8E8E9F', font: { family: 'Outfit' } }
                 },
                 y: {
+                    beginAtZero: true,
                     grid: { color: 'rgba(255, 255, 255, 0.04)' },
                     ticks: {
                         color: '#8E8E9F',
