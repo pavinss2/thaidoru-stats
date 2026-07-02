@@ -27,7 +27,7 @@ graph TD
     style F fill:#16161a,stroke:#34c759,color:#fff
 ```
 
-1. **The Python Scraping Pipeline (GitHub)**: Executed daily in virtual GitHub Actions runner instances, it scrapes X, Instagram, Facebook, and TikTok concurrently, extracts avatars, resolves rate-limits with backoff logic, and writes updates directly to Neon Postgres.
+1. **The Python Scraping Pipeline (GitHub)**: Executed daily in virtual GitHub Actions runner instances, it scrapes X, Instagram, Facebook, and TikTok concurrently, extracts avatars, resolves rate-limits with backoff logic, writes updates directly to Neon Postgres, and dispatches automated status/failure summaries to your Lark Group Chat.
 2. **The Cloud database (Neon Postgres)**: Serves as the single source of truth for stats history, resolving duplicate runs via a unique key constraint and handling missing-data interpolation.
 3. **The Serverless API & Dashboard (Vercel)**: A high-performance dashboard that queries the database via serverless functions (`/api/stats`), with built-in backward compatibility to load local CSV files if database access is unavailable (e.g. during local offline testing).
 
@@ -95,6 +95,7 @@ A parallelized scraping script that:
 *   **File Location**: `.github/workflows/daily_scrape_workflow.yml`
 *   **Automation**: Runs daily at midnight UTC.
 *   **Environment Secret**: Requires the `POSTGRES_URL` secret to be added inside your GitHub repository settings under **Settings -> Secrets and Variables -> Actions -> Repository Secrets**.
+*   **Lark Notifications**: At the end of every run, it automatically triggers a POST request to your Lark custom bot webhook, reporting scraping statistics (expected vs. successful counts) and a detailed bulleted list of any missing or failed accounts.
 *   **Real-time Logs**: You can view the status and live crawler stdout at:
     🔗 [https://github.com/pavinss2/thaidoru-stats/actions](https://github.com/pavinss2/thaidoru-stats/actions)
 
