@@ -325,7 +325,8 @@ function setupFilters() {
             const chartHeaderHeading = document.querySelector(".chart-header h2");
             if (chartHeaderHeading) {
                 const platformDisplayName = chartPlatform === "x" ? "X" : chartPlatform.charAt(0).toUpperCase() + chartPlatform.slice(1);
-                chartHeaderHeading.innerHTML = `<i data-lucide="trending-up"></i> Comparative Standings (${platformDisplayName})`;
+                const titleWord = chartType === "line" ? "Trend" : "Standings";
+                chartHeaderHeading.innerHTML = `<i data-lucide="trending-up"></i> ${titleWord} (${platformDisplayName})`;
                 if (window.lucide) window.lucide.createIcons();
             }
             
@@ -475,7 +476,7 @@ function renderCard(idol, container) {
     
     card.innerHTML = `
         <div class="card-top">
-            <a href="profile.html?name=${encodeURIComponent(idol.name)}" class="avatar-link" title="View details for ${idol.name}">
+            <a href="profile.html?name=${encodeURIComponent(idol.name)}" class="avatar-link" onclick="return confirm('Would you like to view the detailed profile page for ${idol.name}?');" title="View details for ${idol.name}">
                 <div class="member-avatar" ${avatarStyle}>${idol.x_avatar_url ? '' : initials}</div>
             </a>
             <div class="member-meta">
@@ -612,6 +613,46 @@ const chartValuePlugin = {
                     if (dataVal !== null && dataVal !== undefined) {
                         const formatted = new Intl.NumberFormat().format(dataVal);
                         ctx.fillText(formatted, bar.x, bar.y - 6);
+                    }
+                    
+                    // Draw platform SVG icon inside the bar
+                    let currentPlat = chartPlatform;
+                    if (chartPlatform === "all") {
+                        const barLabel = chart.data.labels[index];
+                        if (barLabel) {
+                            currentPlat = barLabel.toLowerCase();
+                        }
+                    }
+                    
+                    const svgPaths = {
+                        instagram: "M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z",
+                        x: "M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z",
+                        facebook: "M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z",
+                        tiktok: "M448 209.91a210.06 210.06 0 0 1-122.77-39.25v178.72A162.55 162.55 0 1 1 185 188.31v89.89a72.69 72.69 0 1 0 72.23 72.42V0h90.87a208.87 208.87 0 0 0 41 93.9 208.56 208.56 0 0 0 58.9 51.6z"
+                    };
+                    
+                    const pathStr = svgPaths[currentPlat.toLowerCase()];
+                    if (pathStr) {
+                        const pathWidth = (currentPlat.toLowerCase() === "instagram" || currentPlat.toLowerCase() === "tiktok") ? 448 : 512;
+                        const pathHeight = 512;
+                        
+                        ctx.save();
+                        const barHeight = bar.base - bar.y;
+                        if (barHeight > 40) {
+                            const centerX = bar.x;
+                            const centerY = bar.y + barHeight / 2;
+                            const iconSize = Math.min(32, bar.width * 0.4);
+                            
+                            if (iconSize > 10) {
+                                const scale = iconSize / 512;
+                                ctx.translate(centerX, centerY);
+                                ctx.scale(scale, scale);
+                                ctx.translate(-pathWidth / 2, -pathHeight / 2);
+                                ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+                                ctx.fill(new Path2D(pathStr));
+                            }
+                        }
+                        ctx.restore();
                     }
                 });
             } else if (meta.type === 'line') {
@@ -754,7 +795,8 @@ function renderGrowthChart() {
             const idolColor = resolveColor(idolConfig?.color);
             const typeLabel = idolConfig?.type === "group" ? "Group" : "Member";
             
-            document.querySelector(".chart-header h2").innerHTML = `<span style="color: ${idolColor}; text-shadow: 0 0 10px color-mix(in srgb, ${idolColor} 40%, transparent);">${targetName}</span> <span style="font-size: 14px; color: var(--text-secondary);">(${typeLabel})</span> - Platform Overview`;
+            const platformText = chartPlatform === "all" ? "Platform Overview" : `${activePlatformName} Overview`;
+            document.querySelector(".chart-header h2").innerHTML = `<span style="color: ${idolColor}; text-shadow: 0 0 10px color-mix(in srgb, ${idolColor} 40%, transparent);">${targetName}</span> <span style="font-size: 14px; color: var(--text-secondary);">(${typeLabel})</span> - ${platformText}`;
             document.querySelector(".chart-subtitle").innerText = "Displaying channel distribution. Click other card headers to plot comparisons.";
             
         } else {
@@ -780,7 +822,7 @@ function renderGrowthChart() {
             
             const coloredNames = getColoredNamesString(selectedIdols);
             
-            document.querySelector(".chart-header h2").innerHTML = `Comparative Trend (${activePlatformName})`;
+            document.querySelector(".chart-header h2").innerHTML = `Trend (${activePlatformName})`;
             document.querySelector(".chart-subtitle").innerHTML = `Tracking selected items: ${coloredNames}`;
         }
     } else {
@@ -850,7 +892,7 @@ function renderGrowthChart() {
             
             const coloredNames = getColoredNamesString(selectedIdols);
             
-            document.querySelector(".chart-header h2").innerHTML = `Comparative Standings (${activePlatformName})`;
+            document.querySelector(".chart-header h2").innerHTML = `Standings (${activePlatformName})`;
             document.querySelector(".chart-subtitle").innerHTML = `Tracking selected items: ${coloredNames}`;
         }
     }
@@ -865,6 +907,19 @@ function renderGrowthChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            onClick: (event, activeElements) => {
+                if (chartType === 'bar' && activeElements.length > 0) {
+                    const activeElement = activeElements[0];
+                    const dataIndex = activeElement.index;
+                    const clickedName = growthChart.data.labels[dataIndex];
+                    if (clickedName) {
+                        const confirmNav = confirm(`Would you like to view the detailed profile page for ${clickedName}?`);
+                        if (confirmNav) {
+                            window.location.href = `profile.html?name=${encodeURIComponent(clickedName)}`;
+                        }
+                    }
+                }
+            },
             plugins: {
                 legend: {
                     display: chartType === 'line',
