@@ -313,6 +313,27 @@ function setupFilters() {
         filterAndRender();
         renderGrowthChart();
     });
+
+    // Group Tab Select All Button Click
+    const groupSelectAllBtn = document.getElementById("group-select-all-btn");
+    if (groupSelectAllBtn) {
+        groupSelectAllBtn.addEventListener("click", () => {
+            const groupsList = idolsList.filter(i => i.type === "group");
+            selectedIdols = groupsList.map(g => g.name);
+            filterAndRender();
+            renderGrowthChart();
+        });
+    }
+
+    // Group Tab Clear Selection Button Click
+    const groupClearBtn = document.getElementById("group-clear-selection-btn");
+    if (groupClearBtn) {
+        groupClearBtn.addEventListener("click", () => {
+            selectedIdols = [];
+            filterAndRender();
+            renderGrowthChart();
+        });
+    }
 }
 
 function renderCard(idol, container) {
@@ -415,22 +436,9 @@ function filterAndRender() {
         
         filteredGroups.forEach(g => g.latestStats = getLatestStats(g.name));
         
-        // Sorting Groups
-        if (sortSelect === "name") {
-            filteredGroups.sort((a, b) => a.name.localeCompare(b.name));
-        } else if (sortSelect === "group") {
-            filteredGroups.sort((a, b) => a.group.localeCompare(b.group));
-        } else if (sortSelect === "color") {
-            filteredGroups.sort((a, b) => (a.color || "").localeCompare(b.color || ""));
-        } else if (sortSelect === "instagram") {
-            filteredGroups.sort((a, b) => b.latestStats.Instagram - a.latestStats.Instagram);
-        } else if (sortSelect === "x") {
-            filteredGroups.sort((a, b) => b.latestStats.X - a.latestStats.X);
-        } else if (sortSelect === "facebook") {
-            filteredGroups.sort((a, b) => b.latestStats.Facebook - a.latestStats.Facebook);
-        } else if (sortSelect === "tiktok") {
-            filteredGroups.sort((a, b) => b.latestStats.TikTok - a.latestStats.TikTok);
-        }
+        // Sort Groups by their original declaration order in idols.json
+        const orderMap = new Map(idolsList.map((item, index) => [item.name.toLowerCase(), index]));
+        filteredGroups.sort((a, b) => orderMap.get(a.name.toLowerCase()) - orderMap.get(b.name.toLowerCase()));
         
         filteredGroups.forEach(group => renderCard(group, groupCardsContainer));
         
@@ -469,6 +477,33 @@ function filterAndRender() {
     }
 }
 
+// Chart.js inline plugin to draw follower counts above bars in Bar Chart mode
+const barValuePlugin = {
+    id: 'barValuePlugin',
+    afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+        ctx.font = 'bold 11px Outfit';
+        ctx.fillStyle = '#E1E1E6';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        
+        chart.data.datasets.forEach((dataset, i) => {
+            const meta = chart.getDatasetMeta(i);
+            if (meta.type !== 'bar') return;
+            
+            meta.data.forEach((bar, index) => {
+                const dataVal = dataset.data[index];
+                if (dataVal !== null && dataVal !== undefined) {
+                    const formatted = new Intl.NumberFormat().format(dataVal);
+                    ctx.fillText(formatted, bar.x, bar.y - 6);
+                }
+            });
+        });
+        ctx.restore();
+    }
+};
+
 // ==========================================
 // Follower Growth Charts (Chart.js)
 // ==========================================
@@ -478,24 +513,29 @@ function renderGrowthChart() {
         growthChart.destroy();
     }
     
-    // Toggle "Clear Selection" button visibility based on selection array size
+    // Toggle "Clear Selection" button visibility based on selection array size and active tab
     const clearBtn = document.getElementById("clear-selection-btn");
     if (clearBtn) {
-        if (selectedIdols.length > 0) {
+        if (selectedIdols.length > 0 && activeView === "member") {
             clearBtn.style.display = "inline-flex";
         } else {
             clearBtn.style.display = "none";
         }
     }
+
+    const groupClearBtn = document.getElementById("group-clear-selection-btn");
+    if (groupClearBtn) {
+        if (selectedIdols.length > 0 && activeView === "group") {
+            groupClearBtn.style.display = "inline-flex";
+        } else {
+            groupClearBtn.style.display = "none";
+        }
+    }
     
-    // Toggle SNS platform dropdown select visibility. Hide if only 1 member card is active.
+    // Keep SNS platform dropdown select wrapper visible at all times to prevent layout shifts
     const snsWrapper = document.getElementById("chart-sns-wrapper");
     if (snsWrapper) {
-        if (selectedIdols.length === 1) {
-            snsWrapper.style.display = "none";
-        } else {
-            snsWrapper.style.display = "flex";
-        }
+        snsWrapper.style.display = "flex";
     }
     
     // Slice historical dates by Date Range selection
@@ -675,7 +715,7 @@ function renderGrowthChart() {
                 const barColors = activeGroups.map((g, idx) => g.color || palette[idx % palette.length]);
                 
                 datasets.push({
-                    label: `Follower Standings (${activePlatformName})`,
+                    label: "Followers",
                     data: dataValues,
                     backgroundColor: barColors.map(c => c + "33"),
                     borderColor: barColors,
@@ -706,7 +746,7 @@ function renderGrowthChart() {
                 const barColors = top10.map((m, idx) => m.color || palette[idx % palette.length]);
                 
                 datasets.push({
-                    label: `Followers (${activePlatformName})`,
+                    label: "Followers",
                     data: dataValues,
                     backgroundColor: barColors.map(c => c + "33"),
                     borderColor: barColors,
@@ -733,7 +773,7 @@ function renderGrowthChart() {
             const dataValues = labels.map(p => stats[p] || 0);
             
             datasets.push({
-                label: `Followers Count`,
+                label: "Followers",
                 data: dataValues,
                 backgroundColor: platformColors.map(c => c + "33"),
                 borderColor: platformColors,
@@ -766,7 +806,7 @@ function renderGrowthChart() {
             const barColors = items.map(item => item.color);
             
             datasets.push({
-                label: `Followers (${activePlatformName})`,
+                label: "Followers",
                 data: dataValues,
                 backgroundColor: barColors.map(c => c + "33"),
                 borderColor: barColors,
@@ -857,7 +897,8 @@ function renderGrowthChart() {
                     }
                 }
             }
-        }
+        },
+        plugins: [barValuePlugin]
     });
     
     // Sync Card Selection glow states based on plottedIdols list (without user clicks)
