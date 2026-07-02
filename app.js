@@ -61,6 +61,11 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Initial setup and render
         calculateGlobalStats();
+        
+        // Pre-select all groups on initial load so cards glow and Clear Selection is active
+        const groups = idolsList.filter(i => i.type === "group");
+        selectedIdols = groups.map(g => g.name);
+        
         setupFilters();
         populateDateFilters();
         filterAndRender();
@@ -501,28 +506,42 @@ function filterAndRender() {
     }
 }
 
-// Chart.js inline plugin to draw follower counts above bars in Bar Chart mode
-const barValuePlugin = {
-    id: 'barValuePlugin',
+// Chart.js inline plugin to draw labels above data points for both line and bar charts
+const chartValuePlugin = {
+    id: 'chartValuePlugin',
     afterDatasetsDraw(chart) {
         const { ctx } = chart;
         ctx.save();
-        ctx.font = 'bold 11px Outfit';
-        ctx.fillStyle = '#E1E1E6';
+        ctx.font = 'bold 9px Outfit';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
         
         chart.data.datasets.forEach((dataset, i) => {
             const meta = chart.getDatasetMeta(i);
-            if (meta.type !== 'bar') return;
             
-            meta.data.forEach((bar, index) => {
-                const dataVal = dataset.data[index];
-                if (dataVal !== null && dataVal !== undefined) {
-                    const formatted = new Intl.NumberFormat().format(dataVal);
-                    ctx.fillText(formatted, bar.x, bar.y - 6);
-                }
-            });
+            if (meta.type === 'bar') {
+                ctx.fillStyle = '#E1E1E6';
+                meta.data.forEach((bar, index) => {
+                    const dataVal = dataset.data[index];
+                    if (dataVal !== null && dataVal !== undefined) {
+                        const formatted = new Intl.NumberFormat().format(dataVal);
+                        ctx.fillText(formatted, bar.x, bar.y - 6);
+                    }
+                });
+            } else if (meta.type === 'line') {
+                const skipStep = Math.max(1, Math.ceil(meta.data.length / 50));
+                
+                meta.data.forEach((point, index) => {
+                    if (index % skipStep !== 0) return;
+                    
+                    const dataVal = dataset.data[index];
+                    if (dataVal !== null && dataVal !== undefined) {
+                        const formatted = new Intl.NumberFormat().format(dataVal);
+                        ctx.fillStyle = dataset.borderColor || '#E1E1E6';
+                        ctx.fillText(formatted, point.x, point.y - 8);
+                    }
+                });
+            }
         });
         ctx.restore();
     }
@@ -964,7 +983,7 @@ function renderGrowthChart() {
                 }
             }
         },
-        plugins: [barValuePlugin]
+        plugins: [chartValuePlugin]
     });
     
     // Sync Card Selection glow states based on plottedIdols list (without user clicks)
