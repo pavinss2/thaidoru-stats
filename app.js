@@ -583,9 +583,14 @@ const chartValuePlugin = {
                     
                     const dataVal = dataset.data[index];
                     if (dataVal !== null && dataVal !== undefined) {
-                        const formatted = new Intl.NumberFormat().format(dataVal);
+                        let formattedVal = dataVal;
+                        if (dataVal >= 1e6) {
+                            formattedVal = parseFloat((dataVal / 1e6).toFixed(1)) + 'M';
+                        } else if (dataVal >= 1e3) {
+                            formattedVal = parseFloat((dataVal / 1e3).toFixed(1)) + 'k';
+                        }
                         ctx.fillStyle = dataset.borderColor || '#E1E1E6';
-                        ctx.fillText(formatted, point.x, point.y - 8);
+                        ctx.fillText(formattedVal, point.x, point.y - 8);
                     }
                 });
             }
@@ -879,6 +884,7 @@ function renderGrowthChart() {
             scales: {
                 x: {
                     type: 'category',
+                    offset: true,
                     grid: { 
                         display: chartType === 'line',
                         color: 'rgba(255, 255, 255, 0.04)' 
