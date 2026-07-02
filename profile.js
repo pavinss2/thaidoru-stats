@@ -124,7 +124,7 @@ function renderProfilePanel() {
     
     // Header page text
     document.getElementById("header-member-title").innerText = name.toUpperCase();
-    document.getElementById("header-member-subtitle").innerText = isGroup ? "Official Group Channel Analytics" : `${memberProfile.group} Member Analytics`;
+    document.getElementById("header-member-subtitle").innerText = isGroup ? "Official Group Channel Analytics" : `${memberProfile.group}`;
     
     // Avatar
     const avatar = document.getElementById("profile-avatar");
