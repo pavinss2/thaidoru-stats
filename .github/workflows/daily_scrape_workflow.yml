@@ -22,10 +22,12 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install requests beautifulsoup4 playwright
+        pip install requests beautifulsoup4 playwright psycopg2-binary
         playwright install --with-deps chromium
 
     - name: Run Daily Scraper Orchestrator
+      env:
+        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       run: |
         python3 daily_workflow.py
 

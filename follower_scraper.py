@@ -213,7 +213,91 @@ def scrape_idol_http_channels(idol):
     return name, results, alerts
 
 # ========================================================
-# Missing Data Linear Interpolation Synthesis
+# PostgreSQL Data Saving & Synthesis Pipelines
+# ========================================================
+def save_results_to_postgres(results, url):
+    print("Connecting to PostgreSQL database to save results...")
+    import psycopg2
+    conn = psycopg2.connect(url)
+    cursor = conn.cursor()
+    for r in results:
+        # r is: (today_str, now_time_str, name, platform, username, count)
+        ts = r[1] if r[1] else None
+        cursor.execute("""
+            INSERT INTO follower_history (date, timestamp, idol_name, platform, username, follower_count)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (date, idol_name, platform) DO UPDATE
+            SET username = EXCLUDED.username, follower_count = EXCLUDED.follower_count, timestamp = EXCLUDED.timestamp;
+        """, (r[0], ts, r[2], r[3], r[4], int(r[5])))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Successfully updated follower history in SQL database.")
+
+def synthesize_missing_data_postgres(url):
+    print("Connecting to PostgreSQL database to run linear data synthesis...")
+    import psycopg2
+    import psycopg2.extras
+    conn = psycopg2.connect(url)
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    cursor.execute("SELECT DISTINCT date FROM follower_history ORDER BY date ASC;")
+    dates = [row['date'] for row in cursor.fetchall()]
+    if len(dates) < 3:
+        cursor.close()
+        conn.close()
+        return
+        
+    today = dates[-1]
+    previous_day = dates[-2]
+    
+    cursor.execute("""
+        SELECT date, timestamp, idol_name, platform, username, follower_count 
+        FROM follower_history 
+        WHERE date IN (%s, %s) OR date < %s;
+    """, (today, previous_day, previous_day))
+    rows = cursor.fetchall()
+    
+    keys = set((r['idol_name'], r['platform']) for r in rows)
+    synthesized_count = 0
+    
+    for idol_name, platform in keys:
+        prev_record = next((r for r in rows if r['date'] == previous_day and r['idol_name'] == idol_name and r['platform'] == platform), None)
+        
+        if not prev_record or not prev_record['follower_count'] or prev_record['follower_count'] == 0:
+            current_record = next((r for r in rows if r['date'] == today and r['idol_name'] == idol_name and r['platform'] == platform), None)
+            
+            if current_record and current_record['follower_count'] and current_record['follower_count'] > 0:
+                current_val = current_record['follower_count']
+                username = current_record['username']
+                
+                older_records = [r for r in rows if r['date'] < previous_day and r['idol_name'] == idol_name and r['platform'] == platform]
+                older_records.sort(key=lambda x: x['date'], reverse=True)
+                
+                if older_records:
+                    prev_available_rec = older_records[0]
+                    prev_val = prev_available_rec['follower_count']
+                    
+                    if prev_val > 0:
+                        synth_val = int((prev_val + current_val) / 2)
+                        
+                        cursor.execute("""
+                            INSERT INTO follower_history (date, timestamp, idol_name, platform, username, follower_count)
+                            VALUES (%s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (date, idol_name, platform) DO UPDATE
+                            SET follower_count = EXCLUDED.follower_count, timestamp = EXCLUDED.timestamp;
+                        """, (previous_day, '12:00:00', idol_name, platform, username, synth_val))
+                        print(f"Synthesized missing count for {idol_name} ({platform}) on {previous_day}: {synth_val}")
+                        synthesized_count += 1
+                        
+    conn.commit()
+    cursor.close()
+    conn.close()
+    if synthesized_count > 0:
+        print(f"Successfully synthesized {synthesized_count} missing records in SQL database.")
+
+# ========================================================
+# Local CSV Data Saving & Synthesis Fallback Pipelines
 # ========================================================
 def synthesize_missing_data(csv_path):
     if not os.path.exists(csv_path):
@@ -232,7 +316,7 @@ def synthesize_missing_data(csv_path):
         
     today = dates[-1]
     previous_day = dates[-2]
-    keys = set((r[2], r[3]) for r in rows) # (Idol_Name, Platform)
+    keys = set((r[2], r[3]) for r in rows)
     
     synthesized_count = 0
     new_synthesized_rows = []
@@ -240,7 +324,6 @@ def synthesize_missing_data(csv_path):
     for idol_name, platform in keys:
         prev_record = next((r for r in rows if r[0] == previous_day and r[2] == idol_name and r[3] == platform), None)
         
-        # If missing or zero count
         if not prev_record or not prev_record[5] or int(prev_record[5]) == 0:
             current_record = next((r for r in rows if r[0] == today and r[2] == idol_name and r[3] == platform), None)
             
@@ -248,7 +331,6 @@ def synthesize_missing_data(csv_path):
                 current_val = int(current_record[5])
                 username = current_record[4]
                 
-                # Fetch previous valid count
                 older_records = [r for r in rows if r[0] < previous_day and r[2] == idol_name and r[3] == platform]
                 older_records.sort(key=lambda x: x[0], reverse=True)
                 
@@ -288,7 +370,6 @@ def run_scraper(config_path: str, output_path: str):
     with open(config_path, 'r', encoding='utf-8') as f:
         idols = json.load(f)
         
-    # Skip inactive profiles
     active_idols = [i for i in idols if i.get("active") is not False]
     print(f"Loaded {len(active_idols)} active profiles to scrape (skipped {len(idols) - len(active_idols)} inactive profiles)...")
     
@@ -305,10 +386,9 @@ def run_scraper(config_path: str, output_path: str):
             idol_name, local_res, alerts = future.result()
             all_alerts.extend(alerts)
             for res in local_res:
-                # Format: (today_str, now_time_str, name, platform, username, count)
                 results.append((today_str, now_time_str, idol_name, res[0], res[1], res[2]))
                 
-    # 2. Run TikTok sequentially (since it leverages Playwright)
+    # 2. Run TikTok sequentially (using Playwright)
     has_tiktok = any(idol.get("tiktok_handle") for idol in active_idols)
     if has_tiktok:
         print("\nStarting Playwright for TikTok profiles scraping...")
@@ -340,7 +420,6 @@ def run_scraper(config_path: str, output_path: str):
             if playwright_context:
                 playwright_context.stop()
                 
-    # Print warnings & errors
     if all_alerts:
         print("\n=== Scraping Alerts & Errors ===")
         for alert in all_alerts:
@@ -348,63 +427,65 @@ def run_scraper(config_path: str, output_path: str):
         with open("alerts.log", "w", encoding="utf-8") as af:
             af.write("\n".join(all_alerts) + "\n")
             
-    # Store results in CSV
     if not results:
-        print("\nNo results scraped. Exiting without updating CSV.")
+        print("\nNo results scraped. Exiting.")
         return
         
-    # Read existing history
-    existing_rows = []
-    headers = ["Date", "Timestamp", "Idol_Name", "Platform", "Username", "Follower_Count"]
-    
-    if os.path.exists(output_path):
+    postgres_url = os.environ.get("POSTGRES_URL")
+    if postgres_url:
         try:
-            with open(output_path, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-                if lines:
-                    headers = [h.strip() for h in lines[0].split(',')]
-                    if "Timestamp" not in headers:
-                        headers.insert(1, "Timestamp")
-                    
-                    for line in lines[1:]:
-                        parts = line.strip().split(',')
-                        if len(parts) == 5:
-                            parts.insert(1, "")
-                        if len(parts) == 6:
-                            existing_rows.append(parts)
+            save_results_to_postgres(results, postgres_url)
+            synthesize_missing_data_postgres(postgres_url)
         except Exception as e:
-            print(f"Error reading existing CSV: {e}")
+            print(f"Error saving stats to PostgreSQL: {e}")
+    else:
+        # Fallback to local CSV
+        existing_rows = []
+        headers = ["Date", "Timestamp", "Idol_Name", "Platform", "Username", "Follower_Count"]
+        
+        if os.path.exists(output_path):
+            try:
+                with open(output_path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                    if lines:
+                        headers = [h.strip() for h in lines[0].split(',')]
+                        if "Timestamp" not in headers:
+                            headers.insert(1, "Timestamp")
+                        
+                        for line in lines[1:]:
+                            parts = line.strip().split(',')
+                            if len(parts) == 5:
+                                parts.insert(1, "")
+                            if len(parts) == 6:
+                                existing_rows.append(parts)
+            except Exception as e:
+                print(f"Error reading existing CSV: {e}")
+                
+        keys_to_update = {(r[0], r[2], r[3]) for r in results}
+        updated_rows = [row for row in existing_rows if (row[0], row[2], row[3]) not in keys_to_update]
+        
+        for r in results:
+            updated_rows.append([r[0], r[1], r[2], r[3], r[4], str(r[5])])
             
-    # Filter out duplicates (Date + Idol_Name + Platform)
-    keys_to_update = {(r[0], r[2], r[3]) for r in results}
-    updated_rows = [row for row in existing_rows if (row[0], row[2], row[3]) not in keys_to_update]
-    
-    # Append new results
-    for r in results:
-        updated_rows.append([r[0], r[1], r[2], r[3], r[4], str(r[5])])
+        updated_rows.sort(key=lambda x: (x[0], x[2], x[3]))
         
-    updated_rows.sort(key=lambda x: (x[0], x[2], x[3]))
-    
-    # Write CSV
-    try:
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(','.join(headers) + '\n')
-            for row in updated_rows:
-                f.write(','.join(row) + '\n')
-        print(f"\nSuccessfully updated follower history CSV. Total records: {len(updated_rows)}")
-    except Exception as e:
-        print(f"Error writing CSV: {e}")
+        try:
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(','.join(headers) + '\n')
+                for row in updated_rows:
+                    f.write(','.join(row) + '\n')
+            print(f"\nSuccessfully updated follower history CSV. Total records: {len(updated_rows)}")
+        except Exception as e:
+            print(f"Error writing CSV: {e}")
+            
+        synthesize_missing_data(output_path)
         
-    # Write back to idols.json to update cached high-res X avatar images
     try:
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(idols, f, indent=2)
         print(f"Successfully saved idols config updates inside '{config_path}'")
     except Exception as e:
         print(f"Error saving idols configuration: {e}")
-        
-    # Run the linear interpolation synthesis for the previous day
-    synthesize_missing_data(output_path)
 
 def test_single_idol(name: str, config_path: str):
     if not os.path.exists(config_path):

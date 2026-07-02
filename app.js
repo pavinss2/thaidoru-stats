@@ -30,11 +30,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // Fetch configuration and follower datasets
     Promise.all([
         fetch("idols.json?_t=" + Date.now()).then(res => res.json()),
-        fetch("follower_history.csv?_t=" + Date.now()).then(res => res.text())
+        fetch("/api/stats?_t=" + Date.now())
+            .then(res => {
+                if (!res.ok) throw new Error("API not available");
+                return res.json();
+            })
+            .catch(() => {
+                // Fallback to static CSV parsing for local testing environments
+                return fetch("follower_history.csv?_t=" + Date.now())
+                    .then(res => res.text())
+                    .then(csvText => parseCSV(csvText));
+            })
     ])
-    .then(([idols, csvText]) => {
+    .then(([idols, parsedData]) => {
         idolsList = idols;
-        historyData = parseCSV(csvText);
+        historyData = parsedData;
         
         // Display the latest scrape update timestamp
         if (historyData.length > 0) {
