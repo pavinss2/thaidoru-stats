@@ -760,8 +760,16 @@ body {
     }
 
     .date-select-wrapper {
-        flex-grow: 1;
         justify-content: space-between;
+    }
+
+    #chart-sns-wrapper {
+        width: 100%;
+    }
+
+    #start-date-wrapper, #end-date-wrapper {
+        width: calc(50% - 4px);
+        flex-grow: 1;
     }
 
     .toggle-group {
