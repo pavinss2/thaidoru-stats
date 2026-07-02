@@ -5,6 +5,9 @@ on:
     - cron: '0 17 * * *' # Every day at midnight Bangkok time (17:00 UTC)
   workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
+permissions:
+  contents: write
+
 jobs:
   scrape_and_deploy:
     runs-on: ubuntu-latest
