@@ -643,7 +643,6 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
     if postgres_url:
         try:
             save_results_to_postgres(results, postgres_url)
-            synthesize_missing_data_postgres(postgres_url)
             db_sync_status = "Success"
         except Exception as e:
             print(f"Error saving stats to PostgreSQL: {e}")
@@ -688,8 +687,6 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
             print(f"\nSuccessfully updated follower history CSV. Total records: {len(updated_rows)}")
         except Exception as e:
             print(f"Error writing CSV: {e}")
-            
-        synthesize_missing_data(output_path)
         
     try:
         with open(config_path, 'w', encoding='utf-8') as f:
@@ -767,8 +764,8 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
     except Exception as le:
         print(f"Error sending Lark notification: {le}")
 
-    # Write failed channels to failed_scrapes.json if any failed, otherwise clear/delete the file
-    failed_scrapes_path = "failed_scrapes.json"
+    # Write failed channels to dynamic file based on platform, otherwise clear/delete the file
+    failed_scrapes_path = f"failed_scrapes_{target_platform.lower()}.json" if target_platform else "failed_scrapes.json"
     if failed_channels:
         try:
             with open(failed_scrapes_path, "w", encoding="utf-8") as f:
@@ -838,10 +835,18 @@ if __name__ == '__main__':
     parser.add_argument("--config", default="idols.json", help="Path to configuration JSON file (default: idols.json).")
     parser.add_argument("--output", default="follower_history.csv", help="Path to follower history CSV file (default: follower_history.csv).")
     parser.add_argument("--failed-file", default=None, help="JSON file containing list of failed channels to retry.")
+    parser.add_argument("--synthesize-only", action="store_true", help="Only run PostgreSQL database data synthesis.")
     
     args = parser.parse_args()
     
-    if args.run:
+    if args.synthesize_only:
+        postgres_url = os.environ.get("POSTGRES_URL")
+        if postgres_url:
+            synthesize_missing_data_postgres(postgres_url)
+        else:
+            print("Error: POSTGRES_URL not configured.")
+            sys.exit(1)
+    elif args.run:
         run_scraper(args.config, args.output, args.platform, args.failed_file)
     elif args.test:
         test_single_idol(args.test, args.config)
