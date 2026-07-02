@@ -21,6 +21,24 @@ let chartType = "bar"; // Plotted chart view type ("line" or "bar")
 // Multi-selection comparative tracking
 let selectedIdols = []; // Array of selected member/group names
 
+// Color resolution helper for professional, eye-friendly pastel colors
+const colorMap = {
+    red: "#FF6B6B",
+    blue: "#5C9CFF",
+    yellow: "#FFD93D",
+    green: "#6BCB77",
+    pink: "#FF85B3",
+    purple: "#A28BFE",
+    orange: "#FFB347",
+    black: "#35353A",
+    white: "#E1E1E6"
+};
+
+function resolveColor(colorName) {
+    if (!colorName) return "#FFFFFF";
+    return colorMap[colorName.toLowerCase()] || colorName;
+}
+
 // ==========================================
 // Initialization & Data Fetching
 // ==========================================
@@ -405,7 +423,7 @@ function renderCard(idol, container) {
     // Glow border colors are forced to white. Dot maps to member-color.
     card.style.setProperty("--card-glow-color", "#FFFFFF");
     if (idol.color) {
-        card.style.setProperty("--member-color", idol.color);
+        card.style.setProperty("--member-color", resolveColor(idol.color));
     }
     
     const initials = idol.name.slice(0, 2).toUpperCase();
@@ -659,7 +677,7 @@ function renderGrowthChart() {
         tiktok: "TikTok"
     };
     const activePlatformName = platformMapping[chartPlatform] || "Instagram";
-    const palette = ["#9D4DFF", "#007AFF", "#FF5A79", "#34C759", "#FF9500", "#E1E1E6", "#25F4EE", "#FF8E3C", "#A28BFE", "#FD72B8"];
+    const palette = ["#9D4DFF", "#5C9CFF", "#FF6B6B", "#6BCB77", "#FFB347", "#E1E1E6", "#4DF2EE", "#FFA066", "#A28BFE", "#FF85B3"];
     
     if (chartType === "line") {
         labels = dates;
@@ -700,7 +718,7 @@ function renderGrowthChart() {
             
             plottedIdols.push(targetName);
             const idolConfig = idolsList.find(i => i.name.toLowerCase() === targetName.toLowerCase());
-            const idolColor = (idolConfig && idolConfig.color) || "#FFFFFF";
+            const idolColor = resolveColor(idolConfig?.color);
             const typeLabel = idolConfig?.type === "group" ? "Group" : "Member";
             
             document.querySelector(".chart-header h2").innerHTML = `<span style="color: ${idolColor}; text-shadow: 0 0 10px color-mix(in srgb, ${idolColor} 40%, transparent);">${targetName}</span> <span style="font-size: 14px; color: var(--text-secondary);">(${typeLabel})</span> - Platform Overview`;
@@ -718,7 +736,7 @@ function renderGrowthChart() {
                 datasets.push({
                     label: name,
                     data: dataPoints,
-                    borderColor: (idolConfig && idolConfig.color) || palette[idx % palette.length],
+                    borderColor: idolConfig?.color ? resolveColor(idolConfig.color) : palette[idx % palette.length],
                     backgroundColor: "transparent",
                     tension: 0.3,
                     borderWidth: 2.5,
@@ -729,7 +747,7 @@ function renderGrowthChart() {
             
             const coloredNames = selectedIdols.map(name => {
                 const config = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
-                const color = (config && config.color) || "#FFFFFF";
+                const color = resolveColor(config?.color);
                 return `<span style="color: ${color}; text-shadow: 0 0 8px color-mix(in srgb, ${color} 30%, transparent);">${name}</span>`;
             }).join(", ");
             
@@ -769,7 +787,7 @@ function renderGrowthChart() {
             plottedIdols.push(targetName);
             
             const idolConfig = idolsList.find(i => i.name.toLowerCase() === targetName.toLowerCase());
-            const idolColor = (idolConfig && idolConfig.color) || "#FFFFFF";
+            const idolColor = resolveColor(idolConfig?.color);
             const typeLabel = idolConfig?.type === "group" ? "Group" : "Member";
             
             document.querySelector(".chart-header h2").innerHTML = `<span style="color: ${idolColor}; text-shadow: 0 0 10px color-mix(in srgb, ${idolColor} 40%, transparent);">${targetName}</span> <span style="font-size: 14px; color: var(--text-secondary);">(${typeLabel})</span>`;
@@ -779,7 +797,7 @@ function renderGrowthChart() {
                 const stats = getLatestStats(name);
                 const count = stats[activePlatformName] || 0;
                 const config = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
-                const color = (config && config.color) || palette[idx % palette.length];
+                const color = config?.color ? resolveColor(config.color) : palette[idx % palette.length];
                 return { name, count, color };
             });
             
@@ -803,7 +821,7 @@ function renderGrowthChart() {
             
             const coloredNames = selectedIdols.map(name => {
                 const config = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
-                const color = (config && config.color) || "#FFFFFF";
+                const color = resolveColor(config?.color);
                 return `<span style="color: ${color}; text-shadow: 0 0 8px color-mix(in srgb, ${color} 30%, transparent);">${name}</span>`;
             }).join(", ");
             
