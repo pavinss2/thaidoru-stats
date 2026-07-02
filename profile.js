@@ -156,6 +156,18 @@ function renderProfilePanel() {
     document.getElementById("profile-agency-val").innerText = memberProfile.agency || "Catsolute";
     document.getElementById("profile-color-val").innerText = memberProfile.color || "None";
     
+    // Debut date
+    const debutItem = document.getElementById("profile-debut-item");
+    const debutVal = document.getElementById("profile-debut-val");
+    if (debutItem && debutVal) {
+        if (memberProfile.debut_date) {
+            debutVal.innerText = memberProfile.debut_date;
+            debutItem.style.display = "flex";
+        } else {
+            debutItem.style.display = "none";
+        }
+    }
+    
     // List platform buttons
     const linksList = document.getElementById("profile-links-list");
     linksList.innerHTML = "";
@@ -247,6 +259,33 @@ function renderProfilePanel() {
             membersContainer.style.display = "block";
         } else {
             membersContainer.style.display = "none";
+        }
+    }
+
+    // Render Spotify Iframe Player if spotify_handle exists
+    const spotifyContainer = document.getElementById("spotify-container");
+    const spotifyWrapper = document.getElementById("spotify-player-wrapper");
+    if (spotifyContainer && spotifyWrapper) {
+        if (memberProfile.spotify_handle) {
+            const match = memberProfile.spotify_handle.match(/\/artist\/([a-zA-Z0-9]+)/);
+            const artistId = match ? match[1] : null;
+            if (artistId) {
+                spotifyWrapper.innerHTML = `
+                    <iframe style="border-radius:12px" 
+                        src="https://open.spotify.com/embed/artist/${artistId}?utm_source=generator&theme=0" 
+                        width="100%" 
+                        height="352" 
+                        frameBorder="0" 
+                        allowfullscreen="" 
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                        loading="lazy">
+                    </iframe>`;
+                spotifyContainer.style.display = "block";
+            } else {
+                spotifyContainer.style.display = "none";
+            }
+        } else {
+            spotifyContainer.style.display = "none";
         }
     }
 }
