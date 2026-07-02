@@ -696,7 +696,7 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
         print(f"Error saving idols configuration: {e}")
 
     failed_channels = []
-    # Calculate stats and send Lark notification
+    # Calculate stats and compile failed channels
     try:
         expected_channels = []
         for idol in active_idols:
@@ -727,42 +727,8 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
 
         # Remove duplicates from failed_channels
         failed_channels = sorted(list(set(failed_channels)))
-        
-        # Calculate counts
-        total_expected = len(expected_channels)
-        total_failed = len(failed_channels)
-        total_success = total_expected - total_failed
-
-        # Prepare message body
-        status_emoji = "✅" if total_failed == 0 else "⚠️"
-        msg_lines = [
-            f"{status_emoji} *Idol Follower Scraper Run Summary*",
-            f"Date: {today_str}",
-            f"Status: {'Success' if total_failed == 0 else 'Completed with Warnings'}",
-            f"Database Sync: {db_sync_status}",
-            f"Total Expected Channels: {total_expected}",
-            f"Successfully Scraped: {total_success} channels",
-            f"Failed/Missing: {total_failed} channels"
-        ]
-        
-        if total_failed > 0:
-            msg_lines.append("\n*Missing/Failed Accounts:*")
-            for name, platform in failed_channels:
-                msg_lines.append(f"• {name} ({platform})")
-                
-        # Send to Lark
-        lark_webhook = "https://open.larksuite.com/open-apis/bot/v2/hook/a870d338-0431-4d97-ac37-e022e16a3c46"
-        import requests
-        payload = {
-            "msg_type": "text",
-            "content": {
-                "text": "\n".join(msg_lines)
-            }
-        }
-        res = requests.post(lark_webhook, json=payload, headers={"Content-Type": "application/json"}, timeout=10)
-        print(f"Lark notification sent. Status: {res.status_code}")
     except Exception as le:
-        print(f"Error sending Lark notification: {le}")
+        print(f"Error compiling failed channels: {le}")
 
     # Write failed channels to dynamic file based on platform, otherwise clear/delete the file
     failed_scrapes_path = f"failed_scrapes_{target_platform.lower()}.json" if target_platform else "failed_scrapes.json"
@@ -783,6 +749,84 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
 
     if db_sync_error:
         raise db_sync_error
+
+def send_consolidated_alert(phase: str, config_path: str = "idols.json"):
+    today_str = datetime.today().strftime('%Y-%m-%d')
+    
+    if not os.path.exists(config_path):
+        print(f"Error: Config '{config_path}' not found for alert.")
+        return
+        
+    with open(config_path, 'r', encoding='utf-8') as f:
+        idols = json.load(f)
+    active_idols = [i for i in idols if i.get("active") is not False]
+    
+    expected_channels = []
+    for idol in active_idols:
+        name = idol.get("name")
+        if idol.get("x_handle"): expected_channels.append((name, "X"))
+        if idol.get("instagram_handle"): expected_channels.append((name, "Instagram"))
+        if idol.get("facebook_page"): expected_channels.append((name, "Facebook"))
+        if idol.get("tiktok_handle"): expected_channels.append((name, "TikTok"))
+        
+    total_expected = len(expected_channels)
+    
+    platforms = ["instagram", "x", "facebook", "tiktok"]
+    failed_channels = []
+    
+    for platform in platforms:
+        failed_file = f"failed_scrapes_{platform}.json"
+        if os.path.exists(failed_file):
+            try:
+                with open(failed_file, 'r', encoding='utf-8') as f:
+                    platform_failed = json.load(f)
+                    failed_channels.extend(platform_failed)
+            except Exception as e:
+                print(f"Error reading failed file '{failed_file}': {e}")
+                
+    # Remove duplicates
+    failed_channels_unique = []
+    seen = set()
+    for item in failed_channels:
+        key = (item[0], item[1])
+        if key not in seen:
+            seen.add(key)
+            failed_channels_unique.append(item)
+            
+    failed_channels_unique = sorted(failed_channels_unique, key=lambda x: (x[1], x[0]))
+    total_failed = len(failed_channels_unique)
+    total_success = total_expected - total_failed
+    
+    status_emoji = "✅" if total_failed == 0 else "⚠️"
+    phase_title = "Primary Scrape Summary" if phase == "initial" else "Final Daily Run Summary"
+    
+    msg_lines = [
+        f"{status_emoji} *Idol Follower Scraper - {phase_title}*",
+        f"Date: {today_str}",
+        f"Status: {'Success' if total_failed == 0 else 'Completed with Warnings'}",
+        f"Total Expected Channels: {total_expected}",
+        f"Successfully Scraped: {total_success} channels",
+        f"Failed/Missing: {total_failed} channels"
+    ]
+    
+    if total_failed > 0:
+        msg_lines.append("\n*Missing/Failed Accounts:*")
+        for name, platform in failed_channels_unique:
+            msg_lines.append(f"• {name} ({platform})")
+            
+    lark_webhook = "https://open.larksuite.com/open-apis/bot/v2/hook/a870d338-0431-4d97-ac37-e022e16a3c46"
+    import requests
+    payload = {
+        "msg_type": "text",
+        "content": {
+            "text": "\n".join(msg_lines)
+        }
+    }
+    try:
+        res = requests.post(lark_webhook, json=payload, headers={"Content-Type": "application/json"}, timeout=10)
+        print(f"Consolidated Lark notification ({phase}) sent. Status: {res.status_code}")
+    except Exception as le:
+        print(f"Error sending consolidated Lark notification: {le}")
 
 def test_single_idol(name: str, config_path: str):
     if not os.path.exists(config_path):
@@ -836,10 +880,13 @@ if __name__ == '__main__':
     parser.add_argument("--output", default="follower_history.csv", help="Path to follower history CSV file (default: follower_history.csv).")
     parser.add_argument("--failed-file", default=None, help="JSON file containing list of failed channels to retry.")
     parser.add_argument("--synthesize-only", action="store_true", help="Only run PostgreSQL database data synthesis.")
+    parser.add_argument("--send-alert", choices=["initial", "final"], help="Send a consolidated Lark notification for the specified phase.")
     
     args = parser.parse_args()
     
-    if args.synthesize_only:
+    if args.send_alert:
+        send_consolidated_alert(args.send_alert, args.config)
+    elif args.synthesize_only:
         postgres_url = os.environ.get("POSTGRES_URL")
         if postgres_url:
             synthesize_missing_data_postgres(postgres_url)

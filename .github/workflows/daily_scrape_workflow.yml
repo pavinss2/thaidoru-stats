@@ -146,6 +146,25 @@ jobs:
           git pull --rebase && git push && break || sleep 5
         done
 
+  # Consolidated Alert for the initial scraping phase
+  send_initial_alert:
+    needs: [scrape_instagram, scrape_x, scrape_facebook, scrape_tiktok]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: pip install requests
+    - name: Send Initial Scraping Alert
+      run: python3 follower_scraper.py --send-alert initial
+
   # Retry Jobs (Parallel platforms, dependent on initial runs)
   retry_instagram:
     needs: scrape_instagram
@@ -349,3 +368,6 @@ jobs:
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       run: python3 follower_scraper.py --synthesize-only
+    - name: Run Final Alert
+      if: always()
+      run: python3 follower_scraper.py --send-alert final
