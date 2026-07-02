@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catsolute Follower Analytics</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@0.300.0"></script>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <!-- Glow Backdrops -->
+    <div class="glow-bg glow-1"></div>
+    <div class="glow-bg glow-2"></div>
+
+    <div class="app-container">
+        <!-- Sidebar / Header Section -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-box">
+                    <i data-lucide="activity" class="glow-icon"></i>
+                </div>
+                <div>
+                    <h1>CATSOLUTE</h1>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <p class="subtitle" style="margin: 0;">Idol Follower Analytics</p>
+                        <span class="update-time" id="last-updated">Last Updated: -</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Stats Widgets -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-label"><i data-lucide="users"></i> Total Members</span>
+                    <span class="stat-val" id="total-members">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label"><i data-lucide="radio"></i> Active Groups</span>
+                    <span class="stat-val" id="active-groups">5</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label"><i data-lucide="star"></i> Top Platform</span>
+                    <span class="stat-val" id="top-platform">-</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            
+            <!-- Controls Bar -->
+            <section class="controls-panel" style="margin-bottom: 20px;">
+                <!-- View Mode Tabs -->
+                <div class="filter-group-container">
+                    <button class="filter-pill active" data-view="group">By Group</button>
+                    <button class="filter-pill" data-view="member">By Member</button>
+                </div>
+            </section>
+
+            <!-- Chart / Insights Section -->
+            <section class="chart-panel">
+                <div class="chart-header">
+                    <div>
+                        <h2><i data-lucide="trending-up"></i> Follower Growth Over Time</h2>
+                        <span class="chart-subtitle">Select cards below to trace weekly growth trends</span>
+                    </div>
+                    <!-- Chart Controls -->
+                    <div class="date-filters">
+                        <div class="date-select-wrapper" id="chart-sns-wrapper">
+                            <label for="chart-sns-select">Platform:</label>
+                            <select id="chart-sns-select">
+                                <option value="instagram">Instagram</option>
+                                <option value="x">X (Twitter)</option>
+                                <option value="facebook">Facebook</option>
+                                <option value="tiktok">TikTok</option>
+                            </select>
+                        </div>
+                        <div class="date-select-wrapper">
+                            <label for="start-date-select">From:</label>
+                            <select id="start-date-select"></select>
+                        </div>
+                        <div class="date-select-wrapper">
+                            <label for="end-date-select">To:</label>
+                            <select id="end-date-select"></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Search Panel (below Chart Panel) -->
+            <section class="search-panel" style="margin-bottom: 30px; display: flex; justify-content: flex-start;">
+                <div class="search-box">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Search...">
+                </div>
+            </section>
+
+            <!-- Official Group Channels Section -->
+            <section class="grid-section group-section" id="group-section" style="margin-bottom: 40px;">
+                <div class="section-title-bar">
+                    <h2><i data-lucide="shield-check"></i> Official Group Channels</h2>
+                </div>
+                <div class="cards-grid" id="group-cards-container">
+                    <!-- Dynamic Group Cards Inserted Here -->
+                </div>
+            </section>
+
+            <!-- Card Grid -->
+            <section class="grid-section" id="members-section">
+                <div class="section-title-bar">
+                    <h2><i data-lucide="layout-grid"></i> Members Directory <span class="members-count" id="members-count">40 Idols</span></h2>
+                    
+                    <div class="directory-filters">
+                        <!-- Group Filter -->
+                        <div class="filter-dropdown">
+                            <label for="group-filter-select">Group:</label>
+                            <select id="group-filter-select">
+                                <option value="all">All Groups</option>
+                                <option value="Sora! Sora!">Sora! Sora!</option>
+                                <option value="Yami Yami">Yami Yami</option>
+                                <option value="Mirai Mirai">Mirai Mirai</option>
+                                <option value="Dream:0n">Dream:0n</option>
+                                <option value="Nox:0ff">Nox:0ff</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Color Filter -->
+                        <div class="filter-dropdown">
+                            <label for="color-filter-select">Color:</label>
+                            <select id="color-filter-select">
+                                <option value="all">All Colors</option>
+                                <option value="Red">Red</option>
+                                <option value="Pink">Pink</option>
+                                <option value="Yellow">Yellow</option>
+                                <option value="Green">Green</option>
+                                <option value="White">White</option>
+                                <option value="Blue">Blue</option>
+                                <option value="Purple">Purple</option>
+                                <option value="Black">Black</option>
+                                <option value="Orange">Orange</option>
+                            </select>
+                        </div>
+
+                        <!-- Sort Selector -->
+                        <div class="filter-dropdown">
+                            <label for="sort-select">Sort By:</label>
+                            <select id="sort-select">
+                                <option value="name">Member Name</option>
+                                <option value="group">Group Name</option>
+                                <option value="color">Member Color</option>
+                                <option value="instagram">Instagram</option>
+                                <option value="x">X (Twitter)</option>
+                                <option value="facebook">Facebook</option>
+                                <option value="tiktok">TikTok</option>
+                            </select>
+                        </div>
+
+                        <!-- Clear Selection Button -->
+                        <button id="clear-selection-btn" class="clear-btn" style="display: none;">
+                            <i data-lucide="x-circle"></i> Clear Selection
+                        </button>
+                    </div>
+                </div>
+                <div class="cards-grid" id="cards-container">
+                    <!-- Dynamic Member Cards Inserted Here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- App Logic Script -->
+    <script src="app.js"></script>
+</body>
+</html>

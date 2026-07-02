@@ -1,0 +1,746 @@
+/* ==========================================
+   Design Tokens & Variables
+   ========================================== */
+:root {
+    --bg-dark: #0A0A0C;
+    --bg-card: rgba(20, 20, 25, 0.65);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.18);
+    
+    --text-primary: #FFFFFF;
+    --text-secondary: #8E8E9F;
+    --text-muted: #565666;
+    
+    --accent-purple: #9D4DFF;
+    --accent-blue: #007AFF;
+    --accent-pink: #FF5A79;
+    --accent-green: #34C759;
+    
+    --font-primary: 'Outfit', sans-serif;
+    
+    --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* ==========================================
+   Global Reset & Layouts
+   ========================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    overflow-x: hidden;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* Mesh Glow Backgrounds */
+.glow-bg {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    filter: blur(150px);
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.15;
+}
+
+.glow-1 {
+    background: var(--accent-purple);
+    top: -200px;
+    left: -200px;
+}
+
+.glow-2 {
+    background: var(--accent-blue);
+    bottom: -200px;
+    right: -200px;
+}
+
+.app-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* ==========================================
+   Header Section
+   ========================================== */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo-box {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(157, 77, 255, 0.4);
+}
+
+.logo-box i {
+    color: white;
+    width: 26px;
+    height: 26px;
+}
+
+.brand h1 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    background: linear-gradient(to right, white, var(--text-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.brand .subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.stats-grid {
+    display: flex;
+    gap: 20px;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 12px 20px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 140px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.stat-label i {
+    width: 14px;
+    height: 14px;
+}
+
+.stat-val {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+/* ==========================================
+   Controls Bar & Filter Controls
+   ========================================== */
+.controls-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.search-box {
+    position: relative;
+    width: 300px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}
+
+.search-box input {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px 16px 12px 42px;
+    color: white;
+    font-family: var(--font-primary);
+    font-size: 14px;
+    outline: none;
+    transition: var(--transition-smooth);
+    backdrop-filter: blur(12px);
+}
+
+.search-box input:focus {
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 15px rgba(157, 77, 255, 0.15);
+}
+
+.filter-group-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-pill {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-family: var(--font-primary);
+    font-weight: 500;
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    backdrop-filter: blur(12px);
+}
+
+.filter-pill:hover {
+    color: white;
+    border-color: var(--border-hover);
+}
+
+.filter-pill.active {
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 0 15px rgba(157, 77, 255, 0.3);
+}
+
+.sort-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 12px;
+    backdrop-filter: blur(12px);
+}
+
+.sort-selector label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.sort-selector select {
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: var(--font-primary);
+    font-size: 13px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+}
+
+.sort-selector select option {
+    background: #121216;
+    color: white;
+}
+
+/* ==========================================
+   Chart Canvas Panel
+   ========================================== */
+.chart-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 40px;
+    backdrop-filter: blur(12px);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.chart-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-header h2 i {
+    width: 20px;
+    height: 20px;
+    color: var(--accent-blue);
+}
+
+.chart-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: block;
+    margin-top: 4px;
+}
+
+/* Date Slicer Dropdowns */
+.date-filters {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.date-select-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 10px;
+}
+
+.date-select-wrapper label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.date-select-wrapper select {
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: var(--font-primary);
+    font-size: 12px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+}
+
+.date-select-wrapper select option {
+    background: #121216;
+    color: white;
+}
+
+.chart-wrapper {
+    width: 100%;
+    height: 320px;
+}
+
+/* ==========================================
+   Cards Directories Grid
+   ========================================== */
+.grid-section {
+    margin-top: 40px;
+}
+
+.section-title-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.section-title-bar h2 {
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-title-bar h2 i {
+    width: 20px;
+    height: 20px;
+    color: var(--accent-purple);
+}
+
+.members-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+/* Member Card Styling */
+.member-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: var(--transition-smooth);
+    position: relative;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    --card-glow-color: #FFFFFF;
+}
+
+.member-card.selected {
+    border-color: var(--card-glow-color, var(--accent-blue));
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--card-glow-color, var(--accent-blue)) 20%, transparent);
+}
+
+/* Glowing checkbox indicators for multi-select comparative charting */
+.member-card::after {
+    content: "";
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.2);
+    transition: var(--transition-smooth);
+    opacity: 0.8;
+    pointer-events: none; /* Make sure it doesn't block click events on card-top */
+}
+
+.member-card.selected::after {
+    border-color: transparent;
+    background: var(--card-glow-color, var(--accent-purple));
+    box-shadow: 0 0 10px var(--card-glow-color, var(--accent-purple));
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: 11px;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 1;
+}
+
+.card-top {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    padding: 10px;
+    margin: -10px -10px 0 -10px;
+    border-radius: 12px;
+    transition: var(--transition-smooth);
+    position: relative;
+    z-index: 2;
+}
+
+.card-top:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* Colored initials circle */
+.member-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    background: var(--card-glow-color, linear-gradient(135deg, var(--accent-purple), var(--accent-blue)));
+    box-shadow: 0 0 12px color-mix(in srgb, var(--card-glow-color, var(--accent-purple)) 30%, transparent);
+}
+
+.member-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.member-name {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.member-tagline {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.group-badge {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+/* Card Platforms List */
+.card-platforms {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+}
+
+.platform-metric {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    padding: 6px 12px;
+}
+
+.platform-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.platform-name i,
+.platform-name svg {
+    width: 16px;
+    height: 16px;
+}
+
+.platform-val {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* Specific Platform Accents (All White logos) */
+.instagram-label svg,
+.x-label svg,
+.facebook-label svg,
+.tiktok-label svg {
+    fill: #FFFFFF;
+}
+
+/* Combined Badge in Card Bottom */
+.card-bottom {
+    border-top: 1px solid var(--border-color);
+    padding-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.combined-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.combined-val {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--accent-purple);
+    background: rgba(157, 77, 255, 0.1);
+    padding: 2px 10px;
+    border-radius: 8px;
+}
+
+/* Color indicator dot (inline next to name) */
+.color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--member-color, var(--text-muted));
+    box-shadow: 0 0 8px color-mix(in srgb, var(--member-color, transparent) 40%, transparent);
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+/* Official Group Badge Styling */
+.badge-official {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+    color: white;
+    padding: 2px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    box-shadow: 0 0 10px rgba(157, 77, 255, 0.3);
+}
+
+/* Clear Selection Action Button */
+.clear-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 59, 92, 0.1);
+    border: 1px solid rgba(255, 59, 92, 0.2);
+    color: #FF3B5C;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-family: var(--font-primary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    backdrop-filter: blur(12px);
+    height: 31px;
+}
+
+.clear-btn:hover {
+    background: rgba(255, 59, 92, 0.2);
+    border-color: rgba(255, 59, 92, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 59, 92, 0.15);
+}
+
+.clear-btn i {
+    width: 14px;
+    height: 14px;
+}
+
+/* ==========================================
+   Responsive Media Queries
+   ========================================== */
+@media (max-width: 900px) {
+    .app-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .stats-grid {
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 600px) {
+    .app-container {
+        padding: 20px 10px;
+    }
+    
+    .stats-grid {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .controls-panel {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    .sort-selector {
+        justify-content: space-between;
+    }
+}
+
+/* Sorters and Filters Panel under Graph */
+.directory-filters {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.filter-dropdown {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 10px;
+    backdrop-filter: blur(12px);
+}
+
+.filter-dropdown label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-dropdown select {
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: var(--font-primary);
+    font-size: 12px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+}
+
+.filter-dropdown select option {
+    background: #121216;
+    color: white;
+}
+
+/* External Link wrapper styling for platform metrics */
+a.platform-metric {
+    text-decoration: none;
+    color: white;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+a.platform-metric:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Update time badge in header */
+.update-time {
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    font-family: var(--font-primary);
+    font-weight: 600;
+}

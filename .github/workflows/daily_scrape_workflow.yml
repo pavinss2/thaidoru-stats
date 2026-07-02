@@ -1,0 +1,38 @@
+name: Daily Idol Follower Scraper & Avatar Monitor
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Every day at midnight UTC
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  scrape_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install requests beautifulsoup4 playwright
+        playwright install --with-deps chromium
+
+    - name: Run Daily Scraper Orchestrator
+      run: |
+        python3 daily_workflow.py
+
+    - name: Commit and Push changes
+      run: |
+        git config --global user.name "Github Actions Scraper Bot"
+        git config --global user.email "actions@github.com"
+        git add idols.json follower_history.csv
+        git commit -m "Auto-update follower metrics & profile configurations: $(date +'%Y-%m-%d')" || exit 0
+        git push
