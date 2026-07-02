@@ -195,6 +195,60 @@ function renderProfilePanel() {
         `;
         linksList.appendChild(link);
     });
+
+    // Render Group Members List if this profile is a Group channel
+    const membersContainer = document.getElementById("group-members-container");
+    const membersList = document.getElementById("group-members-list");
+    
+    if (membersContainer && membersList) {
+        if (isGroup) {
+            const groupMembers = idolsList.filter(i => i.type === "member" && i.group.toLowerCase() === name.toLowerCase());
+            
+            membersList.innerHTML = "";
+            groupMembers.forEach(m => {
+                const link = document.createElement("a");
+                link.href = `profile.html?name=${encodeURIComponent(m.name)}`;
+                
+                link.style.display = "flex";
+                link.style.alignItems = "center";
+                link.style.padding = "8px 12px";
+                link.style.background = "rgba(255, 255, 255, 0.03)";
+                link.style.border = "1px solid var(--border-color)";
+                link.style.borderRadius = "8px";
+                link.style.textDecoration = "none";
+                link.style.transition = "var(--transition-smooth)";
+                
+                link.addEventListener("mouseenter", () => {
+                    link.style.background = "rgba(255, 255, 255, 0.08)";
+                    link.style.borderColor = "rgba(255, 255, 255, 0.2)";
+                });
+                link.addEventListener("mouseleave", () => {
+                    link.style.background = "rgba(255, 255, 255, 0.03)";
+                    link.style.borderColor = "var(--border-color)";
+                });
+
+                const initials = m.name.slice(0, 2).toUpperCase();
+                const avatarStyle = m.x_avatar_url 
+                    ? `style="width: 24px; height: 24px; border-radius: 50%; background-image: url('${m.x_avatar_url}'); background-size: cover; background-position: center; margin-right: 10px; flex-shrink: 0;"`
+                    : `style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; margin-right: 10px; flex-shrink: 0;"`;
+                
+                const colorDot = m.color 
+                    ? `<span style="width: 6px; height: 6px; border-radius: 50%; background-color: ${resolveColor(m.color)}; box-shadow: 0 0 6px ${resolveColor(m.color)}; margin-left: auto;"></span>`
+                    : '';
+
+                link.innerHTML = `
+                    <div ${avatarStyle}>${m.x_avatar_url ? '' : initials}</div>
+                    <span style="font-size: 12px; font-weight: 600; color: white;">${m.name}</span>
+                    ${colorDot}
+                `;
+                membersList.appendChild(link);
+            });
+            
+            membersContainer.style.display = "block";
+        } else {
+            membersContainer.style.display = "none";
+        }
+    }
 }
 
 function initDateFilters() {

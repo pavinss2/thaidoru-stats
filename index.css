@@ -882,6 +882,9 @@ a.platform-metric:hover {
 }
 
 .search-input-wrapper .search-icon {
+    position: static !important;
+    transform: none !important;
+    pointer-events: auto !important;
     width: 16px;
     height: 16px;
     color: var(--text-secondary);
@@ -1151,16 +1154,16 @@ a.platform-metric:hover {
 .home-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
     text-decoration: none;
     color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-color);
-    padding: 10px 16px;
+    width: 40px;
+    height: 40px;
     border-radius: 12px;
-    font-size: 13px;
-    font-weight: 600;
     transition: var(--transition-smooth);
+    flex-shrink: 0;
 }
 
 .home-btn:hover {
