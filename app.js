@@ -476,7 +476,7 @@ function renderCard(idol, container) {
     
     card.innerHTML = `
         <div class="card-top">
-            <a href="profile.html?name=${encodeURIComponent(idol.name)}" class="avatar-link" onclick="return confirm('Would you like to view the detailed profile page for ${idol.name}?');" title="View details for ${idol.name}">
+            <a href="profile.html?name=${encodeURIComponent(idol.name)}" class="avatar-link" onclick="event.preventDefault(); event.stopPropagation(); showPopupAtElement('${idol.name}', this);" title="View details for ${idol.name}">
                 <div class="member-avatar" ${avatarStyle}>${idol.x_avatar_url ? '' : initials}</div>
             </a>
             <div class="member-meta">
@@ -913,10 +913,19 @@ function renderGrowthChart() {
                     const dataIndex = activeElement.index;
                     const clickedName = growthChart.data.labels[dataIndex];
                     if (clickedName) {
-                        const confirmNav = confirm(`Would you like to view the detailed profile page for ${clickedName}?`);
-                        if (confirmNav) {
-                            window.location.href = `profile.html?name=${encodeURIComponent(clickedName)}`;
-                        }
+                        event.native.stopPropagation(); // Stop propagation to document click handler
+                        
+                        // Calculate coordinates near the click point relative to the viewport + scroll
+                        const canvas = growthChart.canvas;
+                        const rect = canvas.getBoundingClientRect();
+                        const scrollX = window.scrollX || window.pageXOffset;
+                        const scrollY = window.scrollY || window.pageYOffset;
+                        
+                        // Place popup slightly above and centered on the click position
+                        const x = rect.left + scrollX + event.x - 60;
+                        const y = rect.top + scrollY + event.y - 45;
+                        
+                        showPopupAtCoords(clickedName, x, y);
                     }
                 }
             },
@@ -1122,3 +1131,37 @@ function initSearchAutocomplete() {
         }
     });
 }
+
+function showPopupAtElement(name, element) {
+    const rect = element.getBoundingClientRect();
+    const scrollX = window.scrollX || window.pageXOffset;
+    const scrollY = window.scrollY || window.pageYOffset;
+    
+    // Center bottom position
+    const x = rect.left + scrollX + rect.width / 2 - 60;
+    const y = rect.bottom + scrollY + 8;
+    
+    showPopupAtCoords(name, x, y);
+}
+
+function showPopupAtCoords(name, x, y) {
+    const popup = document.getElementById("custom-profile-popup");
+    if (popup) {
+        popup.style.left = `${x}px`;
+        popup.style.top = `${y}px`;
+        popup.style.display = "block";
+        popup.onclick = (e) => {
+            e.stopPropagation();
+            window.location.href = `profile.html?name=${encodeURIComponent(name)}`;
+        };
+    }
+}
+
+// Document click-away listener to hide popup
+document.addEventListener("click", () => {
+    const popup = document.getElementById("custom-profile-popup");
+    if (popup) {
+        popup.style.display = "none";
+    }
+});
+

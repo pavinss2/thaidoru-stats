@@ -235,6 +235,14 @@
         </main>
     </div>
 
+    <!-- Custom Profile Hover/Click Popup -->
+    <div id="custom-profile-popup" style="display: none; position: absolute; background: #16161A; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); z-index: 10000; cursor: pointer; transition: all 0.2s;" onclick="event.stopPropagation();">
+        <span style="font-size: 12px; font-weight: 700; color: white; display: flex; align-items: center; gap: 8px; font-family: var(--font-primary);">
+            <svg viewBox="0 0 448 512" style="width: 12px; height: 12px; fill: #1DB954;"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/></svg>
+            View Profile
+        </span>
+    </div>
+
     <!-- App Logic Script -->
     <script src="app.js"></script>
 </body>

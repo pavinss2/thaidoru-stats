@@ -1186,3 +1186,10 @@ a.platform-metric:hover {
     }
 }
 
+#custom-profile-popup:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    transform: scale(1.02);
+}
+
+
