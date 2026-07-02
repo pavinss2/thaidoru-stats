@@ -39,6 +39,26 @@ function resolveColor(colorName) {
     return colorMap[colorName.toLowerCase()] || colorName;
 }
 
+// Generate truncated colored HTML names list for subtitle tracking
+function getColoredNamesString(list) {
+    if (list.length === 0) return "";
+    
+    const maxShow = 10;
+    const itemsToShow = list.slice(0, maxShow);
+    
+    const mapped = itemsToShow.map(name => {
+        const config = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
+        const color = resolveColor(config?.color);
+        return `<span style="color: ${color}; text-shadow: 0 0 8px color-mix(in srgb, ${color} 30%, transparent);">${name}</span>`;
+    });
+    
+    let result = mapped.join(", ");
+    if (list.length > maxShow) {
+        result += ` and ${list.length - maxShow} more..`;
+    }
+    return result;
+}
+
 // ==========================================
 // Initialization & Data Fetching
 // ==========================================
@@ -751,11 +771,7 @@ function renderGrowthChart() {
                 plottedIdols.push(name);
             });
             
-            const coloredNames = selectedIdols.map(name => {
-                const config = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
-                const color = resolveColor(config?.color);
-                return `<span style="color: ${color}; text-shadow: 0 0 8px color-mix(in srgb, ${color} 30%, transparent);">${name}</span>`;
-            }).join(", ");
+            const coloredNames = getColoredNamesString(selectedIdols);
             
             document.querySelector(".chart-header h2").innerHTML = `Comparative Trend (${activePlatformName})`;
             document.querySelector(".chart-subtitle").innerHTML = `Tracking selected items: ${coloredNames}`;
@@ -825,11 +841,7 @@ function renderGrowthChart() {
             });
             plottedIdols = selectedIdols;
             
-            const coloredNames = selectedIdols.map(name => {
-                const config = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
-                const color = resolveColor(config?.color);
-                return `<span style="color: ${color}; text-shadow: 0 0 8px color-mix(in srgb, ${color} 30%, transparent);">${name}</span>`;
-            }).join(", ");
+            const coloredNames = getColoredNamesString(selectedIdols);
             
             document.querySelector(".chart-header h2").innerHTML = `Comparative Standings (${activePlatformName})`;
             document.querySelector(".chart-subtitle").innerHTML = `Tracking selected items: ${coloredNames}`;
