@@ -769,37 +769,20 @@ def send_consolidated_alert(phase: str, config_path: str = "idols.json"):
         if idol.get("facebook_page"): expected_channels.append((name, "Facebook"))
         if idol.get("tiktok_handle"): expected_channels.append((name, "TikTok"))
         
-    total_expected = len(expected_channels)
+    # Load today's backups from database or CSV to determine actual successes
+    postgres_url = os.environ.get("POSTGRES_URL")
+    if postgres_url:
+        backups = get_today_backup_postgres(postgres_url, today_str)
+    else:
+        backups = get_today_backup_csv("follower_history.csv", today_str)
+        
+    backups_normalized = {(name.lower(), plat.lower()) for (name, plat) in backups.keys()}
     
-    platforms = ["instagram", "x", "facebook", "tiktok"]
-    failed_channels = []
-    
-    for platform in platforms:
-        failed_file = f"failed_scrapes_{platform}.json"
-        if os.path.exists(failed_file):
-            try:
-                with open(failed_file, 'r', encoding='utf-8') as f:
-                    platform_failed = json.load(f)
-                    failed_channels.extend(platform_failed)
-            except Exception as e:
-                print(f"Error reading failed file '{failed_file}': {e}")
-                
-    # Remove duplicates
-    failed_channels_unique = []
-    seen = set()
-    for item in failed_channels:
-        key = (item[0], item[1])
-        if key not in seen:
-            seen.add(key)
-            failed_channels_unique.append(item)
-            
-    failed_channels_unique = sorted(failed_channels_unique, key=lambda x: (x[1], x[0]))
-    total_failed = len(failed_channels_unique)
-    total_success = total_expected - total_failed
-    
-    # Count expected/failed/success by platform
+    # Count expected, success, and failed by platform
     platform_expected = {"Instagram": 0, "X": 0, "Facebook": 0, "TikTok": 0}
+    platform_success = {"Instagram": 0, "X": 0, "Facebook": 0, "TikTok": 0}
     platform_failed = {"Instagram": 0, "X": 0, "Facebook": 0, "TikTok": 0}
+    failed_channels_unique = []
     
     def normalize_plat(p):
         p_lower = p.lower()
@@ -814,15 +797,16 @@ def send_consolidated_alert(phase: str, config_path: str = "idols.json"):
         if plat_key in platform_expected:
             platform_expected[plat_key] += 1
             
-    for name, plat in failed_channels_unique:
-        plat_key = normalize_plat(plat)
-        if plat_key in platform_failed:
+        if (name.lower(), plat.lower()) in backups_normalized:
+            platform_success[plat_key] += 1
+        else:
             platform_failed[plat_key] += 1
+            failed_channels_unique.append((name, plat_key))
             
-    platform_success = {}
-    for plat in platform_expected:
-        platform_success[plat] = platform_expected[plat] - platform_failed[plat]
-        
+    total_expected = len(expected_channels)
+    total_success = sum(platform_success.values())
+    total_failed = sum(platform_failed.values())
+    
     status_emoji = "✅" if total_failed == 0 else "⚠️"
     phase_title = "Primary Scrape Summary" if phase == "initial" else "Final Daily Run Summary"
     
