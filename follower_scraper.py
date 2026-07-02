@@ -162,9 +162,10 @@ def scrape_tiktok(handle: str, browser=None) -> int:
 # ========================================================
 # Concurrent Scraping Task Worker
 # ========================================================
-def scrape_idol_http_channels(idol):
+def scrape_idol_http_channels(idol, today_backups, target_platform=None):
     """
     Scrapes X, Instagram, and Facebook metrics concurrently.
+    Includes failure fallback logic from today_backups.
     """
     name = idol.get("name")
     results = []
@@ -172,45 +173,116 @@ def scrape_idol_http_channels(idol):
     
     # 1. Instagram
     ig = idol.get("instagram_handle")
-    if ig:
+    if ig and (target_platform is None or target_platform.lower() == "instagram"):
+        backup_val = today_backups.get((name, "Instagram"))
         try:
             count = scrape_instagram(ig)
+            if count == 0 and backup_val is not None:
+                print(f"Scraped 0 for {name} (Instagram), using backup: {backup_val}")
+                count = backup_val
             results.append(("Instagram", ig, count))
         except Exception as e:
             err_msg = str(e)
             alerts.append(f"Instagram Scrape Error for {name} ({ig}): {err_msg}")
-            if "429" in err_msg or "blocked" in err_msg.lower():
-                alerts.append(f"::warning:: Blocked by Instagram while scraping {name} ({ig})")
+            if backup_val is not None:
+                print(f"Scrape failed for {name} (Instagram), using backup count: {backup_val}")
+                results.append(("Instagram", ig, backup_val))
+            else:
+                if "429" in err_msg or "blocked" in err_msg.lower():
+                    alerts.append(f"::warning:: Blocked by Instagram while scraping {name} ({ig})")
                 
     # 2. X (Twitter)
     x = idol.get("x_handle")
-    if x:
+    if x and (target_platform is None or target_platform.lower() == "x"):
+        backup_val = today_backups.get((name, "X"))
         try:
             count, avatar_url = scrape_x_and_avatar(x)
+            if count == 0 and backup_val is not None:
+                print(f"Scraped 0 for {name} (X), using backup: {backup_val}")
+                count = backup_val
             results.append(("X", x, count))
             if avatar_url:
                 idol["x_avatar_url"] = avatar_url
         except Exception as e:
             err_msg = str(e)
             alerts.append(f"X Scrape Error for {name} ({x}): {err_msg}")
-            if "429" in err_msg or "blocked" in err_msg.lower():
-                alerts.append(f"::warning:: Blocked by X while scraping {name} ({x})")
-            if "404" in err_msg or "suspended" in err_msg.lower():
-                alerts.append(f"::error:: X account for {name} ({x}) not found or suspended!")
+            if backup_val is not None:
+                print(f"Scrape failed for {name} (X), using backup count: {backup_val}")
+                results.append(("X", x, backup_val))
+            else:
+                if "429" in err_msg or "blocked" in err_msg.lower():
+                    alerts.append(f"::warning:: Blocked by X while scraping {name} ({x})")
+                if "404" in err_msg or "suspended" in err_msg.lower():
+                    alerts.append(f"::error:: X account for {name} ({x}) not found or suspended!")
                 
     # 3. Facebook
     fb = idol.get("facebook_page")
-    if fb:
+    if fb and (target_platform is None or target_platform.lower() == "facebook"):
+        backup_val = today_backups.get((name, "Facebook"))
         try:
             count = scrape_facebook(fb)
+            if count == 0 and backup_val is not None:
+                print(f"Scraped 0 for {name} (Facebook), using backup: {backup_val}")
+                count = backup_val
             results.append(("Facebook", fb, count))
         except Exception as e:
             err_msg = str(e)
             alerts.append(f"Facebook Scrape Error for {name} ({fb}): {err_msg}")
-            if "429" in err_msg or "blocked" in err_msg.lower():
-                alerts.append(f"::warning:: Blocked by Facebook while scraping {name} ({fb})")
+            if backup_val is not None:
+                print(f"Scrape failed for {name} (Facebook), using backup count: {backup_val}")
+                results.append(("Facebook", fb, backup_val))
+            else:
+                if "429" in err_msg or "blocked" in err_msg.lower():
+                    alerts.append(f"::warning:: Blocked by Facebook while scraping {name} ({fb})")
                 
     return name, results, alerts
+
+# ========================================================
+# Backup Retrieval Pipelines (Database & CSV)
+# ========================================================
+def get_today_backup_postgres(url, today_str):
+    print("Fetching today's database records as backups...")
+    import psycopg2
+    import psycopg2.extras
+    backups = {}
+    try:
+        conn = psycopg2.connect(url)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("""
+            SELECT idol_name, platform, follower_count 
+            FROM follower_history 
+            WHERE date = %s;
+        """, (today_str,))
+        rows = cursor.fetchall()
+        for r in rows:
+            backups[(r['idol_name'], r['platform'])] = r['follower_count']
+        cursor.close()
+        conn.close()
+        print(f"Loaded {len(backups)} database backups for {today_str}.")
+    except Exception as e:
+        print(f"Warning: Could not fetch today's database backups: {e}")
+    return backups
+
+def get_today_backup_csv(csv_path, today_str):
+    backups = {}
+    if not os.path.exists(csv_path):
+        return backups
+    print("Fetching today's CSV records as backups...")
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            next(reader) # skip headers
+            for r in reader:
+                if len(r) == 6 and r[0] == today_str:
+                    try:
+                        backups[(r[2], r[3])] = int(r[5])
+                      # Rows: Date, Timestamp, Idol_Name, Platform, Username, Follower_Count
+                    except ValueError:
+                        pass
+        print(f"Loaded {len(backups)} CSV backups for {today_str}.")
+    except Exception as e:
+        print(f"Warning: Could not fetch today's CSV backups: {e}")
+    return backups
 
 # ========================================================
 # PostgreSQL Data Saving & Synthesis Pipelines
@@ -362,7 +434,7 @@ def synthesize_missing_data(csv_path):
 # ========================================================
 # Main Execution Loop
 # ========================================================
-def run_scraper(config_path: str, output_path: str):
+def run_scraper(config_path: str, output_path: str, target_platform: str = None):
     if not os.path.exists(config_path):
         print(f"Error: Configuration file '{config_path}' not found.")
         return
@@ -371,26 +443,37 @@ def run_scraper(config_path: str, output_path: str):
         idols = json.load(f)
         
     active_idols = [i for i in idols if i.get("active") is not False]
-    print(f"Loaded {len(active_idols)} active profiles to scrape (skipped {len(idols) - len(active_idols)} inactive profiles)...")
-    
+    print(f"Loaded {len(active_idols)} active profiles to scrape...")
+    if target_platform:
+        print(f"Limiting scraping to platform: {target_platform}")
+        
     today_str = datetime.today().strftime('%Y-%m-%d')
     now_time_str = datetime.today().strftime('%H:%M:%S')
     results = []
     all_alerts = []
     
-    # 1. Run HTTP platforms scrape concurrently using ThreadPoolExecutor
-    print("\nRunning X, Instagram, and Facebook scrapers concurrently...")
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {executor.submit(scrape_idol_http_channels, idol): idol for idol in active_idols}
-        for future in as_completed(futures):
-            idol_name, local_res, alerts = future.result()
-            all_alerts.extend(alerts)
-            for res in local_res:
-                results.append((today_str, now_time_str, idol_name, res[0], res[1], res[2]))
+    # Load today's backups
+    postgres_url = os.environ.get("POSTGRES_URL")
+    if postgres_url:
+        today_backups = get_today_backup_postgres(postgres_url, today_str)
+    else:
+        today_backups = get_today_backup_csv(output_path, today_str)
+        
+    # 1. Run HTTP platforms scrape concurrently (if applicable)
+    run_http = target_platform is None or target_platform.lower() in ("x", "instagram", "facebook")
+    if run_http:
+        print("\nRunning X, Instagram, and Facebook scrapers concurrently...")
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {executor.submit(scrape_idol_http_channels, idol, today_backups, target_platform): idol for idol in active_idols}
+            for future in as_completed(futures):
+                idol_name, local_res, alerts = future.result()
+                all_alerts.extend(alerts)
+                for res in local_res:
+                    results.append((today_str, now_time_str, idol_name, res[0], res[1], res[2]))
                 
     # 2. Run TikTok sequentially (using Playwright)
-    has_tiktok = any(idol.get("tiktok_handle") for idol in active_idols)
-    if has_tiktok:
+    run_tiktok = (target_platform is None or target_platform.lower() == "tiktok") and any(idol.get("tiktok_handle") for idol in active_idols)
+    if run_tiktok:
         print("\nStarting Playwright for TikTok profiles scraping...")
         browser_instance = None
         playwright_context = None
@@ -403,15 +486,23 @@ def run_scraper(config_path: str, output_path: str):
                 name = idol.get("name")
                 tiktok_handle = idol.get("tiktok_handle")
                 if tiktok_handle:
+                    backup_val = today_backups.get((name, "TikTok"))
                     print(f"  TikTok ({tiktok_handle})...")
                     try:
                         followers = scrape_tiktok(tiktok_handle, browser=browser_instance)
+                        if followers == 0 and backup_val is not None:
+                            print(f"Scraped 0 for {name} (TikTok), using backup: {backup_val}")
+                            followers = backup_val
                         results.append((today_str, now_time_str, name, "TikTok", tiktok_handle, followers))
                     except Exception as e:
                         err_msg = str(e)
                         all_alerts.append(f"TikTok Scrape Error for {name} ({tiktok_handle}): {err_msg}")
-                        if "429" in err_msg or "blocked" in err_msg.lower():
-                            all_alerts.append(f"::warning:: Blocked by TikTok while scraping {name} ({tiktok_handle})")
+                        if backup_val is not None:
+                            print(f"Scrape failed for {name} (TikTok), using backup count: {backup_val}")
+                            results.append((today_str, now_time_str, name, "TikTok", tiktok_handle, backup_val))
+                        else:
+                            if "429" in err_msg or "blocked" in err_msg.lower():
+                                all_alerts.append(f"::warning:: Blocked by TikTok while scraping {name} ({tiktok_handle})")
         except Exception as e:
             all_alerts.append(f"Playwright initialization error: {e}")
         finally:
@@ -431,7 +522,6 @@ def run_scraper(config_path: str, output_path: str):
         print("\nNo results scraped. Exiting.")
         return
         
-    postgres_url = os.environ.get("POSTGRES_URL")
     if postgres_url:
         try:
             save_results_to_postgres(results, postgres_url)
@@ -533,6 +623,7 @@ def test_single_idol(name: str, config_path: str):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Monitor and log public follower counts of idols across X, Instagram, Facebook, and TikTok.")
     parser.add_argument("--run", action="store_true", help="Run the full scraping pipeline and update the CSV.")
+    parser.add_argument("--platform", default=None, help="Scrape only a specific platform (e.g. TikTok, X, Instagram, Facebook).")
     parser.add_argument("--test", type=str, help="Test scraping a single idol by name from the config (e.g. --test Ame).")
     parser.add_argument("--config", default="idols.json", help="Path to configuration JSON file (default: idols.json).")
     parser.add_argument("--output", default="follower_history.csv", help="Path to follower history CSV file (default: follower_history.csv).")
@@ -540,7 +631,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     if args.run:
-        run_scraper(args.config, args.output)
+        run_scraper(args.config, args.output, args.platform)
     elif args.test:
         test_single_idol(args.test, args.config)
     else:
