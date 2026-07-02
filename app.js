@@ -114,29 +114,7 @@ function parseCSV(text) {
 // Calculations & Stat Updates
 // ==========================================
 function calculateGlobalStats() {
-    if (historyData.length === 0) return;
-    
-    const totalMembers = idolsList.filter(i => i.type === "member").length;
-    document.getElementById("total-members").innerText = totalMembers;
-    
-    const dates = [...new Set(historyData.map(r => r.Date))].sort();
-    const latestDate = dates[dates.length - 1];
-    const latestRecords = historyData.filter(r => r.Date === latestDate);
-    
-    const platformShares = {};
-    latestRecords.forEach(r => {
-        platformShares[r.Platform] = (platformShares[r.Platform] || 0) + parseInt(r.Follower_Count || 0, 10);
-    });
-    
-    let topPlatform = "None";
-    let maxFollowers = -1;
-    Object.entries(platformShares).forEach(([platform, count]) => {
-        if (count > maxFollowers) {
-            maxFollowers = count;
-            topPlatform = platform;
-        }
-    });
-    document.getElementById("top-platform").innerText = topPlatform;
+    // Stats widgets removed from top header
 }
 
 function getLatestStats(idolName) {
@@ -608,9 +586,9 @@ const chartValuePlugin = {
                     if (dataVal !== null && dataVal !== undefined) {
                         let formattedVal = dataVal;
                         if (dataVal >= 1e6) {
-                            formattedVal = parseFloat((dataVal / 1e6).toFixed(1)) + 'M';
+                            formattedVal = parseFloat((dataVal / 1e6).toFixed(2)) + 'M';
                         } else if (dataVal >= 1e3) {
-                            formattedVal = parseFloat((dataVal / 1e3).toFixed(1)) + 'k';
+                            formattedVal = parseFloat((dataVal / 1e3).toFixed(2)) + 'k';
                         }
                         ctx.fillStyle = dataset.borderColor || '#E1E1E6';
                         ctx.fillText(formattedVal, point.x, point.y - 8);
