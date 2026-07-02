@@ -653,8 +653,13 @@ function initSearchAutocomplete() {
     let highlightedIndex = -1;
     let currentSuggestions = [];
 
+    const normalizeSearchStr = (str) => {
+        if (!str) return "";
+        return str.toLowerCase().replace(/[^a-z0-9]/g, "");
+    };
+
     searchInput.addEventListener("input", (e) => {
-        const query = e.target.value.toLowerCase().trim();
+        const query = e.target.value.trim();
         if (!query) {
             suggestionsBox.innerHTML = "";
             suggestionsBox.classList.remove("active");
@@ -662,10 +667,20 @@ function initSearchAutocomplete() {
             return;
         }
 
+        const queryNorm = normalizeSearchStr(query);
+
+        // Filter groups and members matching name or group
         currentSuggestions = idolsList.filter(idol => {
-            const nameMatch = idol.name.toLowerCase().includes(query);
-            const groupMatch = idol.group && idol.group.toLowerCase().includes(query);
-            return nameMatch || groupMatch;
+            const nameNorm = normalizeSearchStr(idol.name);
+            const groupNorm = normalizeSearchStr(idol.group);
+            return nameNorm.includes(queryNorm) || groupNorm.includes(queryNorm);
+        });
+
+        // Sort official group channels first
+        currentSuggestions.sort((a, b) => {
+            const aIsGroup = a.type === "group" ? 1 : 0;
+            const bIsGroup = b.type === "group" ? 1 : 0;
+            return bIsGroup - aIsGroup;
         });
 
         if (currentSuggestions.length === 0) {
