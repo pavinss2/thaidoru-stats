@@ -308,6 +308,35 @@ function setupFilters() {
         });
     });
 
+    // Select Top 10 Button Click
+    const selectTop10Btn = document.getElementById("select-top-10-btn");
+    if (selectTop10Btn) {
+        selectTop10Btn.addEventListener("click", () => {
+            const membersList = idolsList.filter(i => i.type === "member");
+            const activeMembers = membersList.filter(m => {
+                if (filterGroup !== "all" && m.group !== filterGroup) return false;
+                if (filterColor !== "all" && m.color !== filterColor) return false;
+                return true;
+            });
+            
+            const platformMapping = {
+                instagram: "Instagram",
+                x: "X",
+                facebook: "Facebook",
+                tiktok: "TikTok",
+                all: "Instagram"
+            };
+            const activeSns = platformMapping[chartPlatform] || "Instagram";
+            activeMembers.forEach(m => m.latestStats = getLatestStats(m.name));
+            activeMembers.sort((a, b) => b.latestStats[activeSns] - a.latestStats[activeSns]);
+            const top10 = activeMembers.slice(0, 10);
+            
+            selectedIdols = top10.map(m => m.name);
+            filterAndRender();
+            renderGrowthChart();
+        });
+    }
+
     // Select All Button Click
     const selectAllBtn = document.getElementById("select-all-btn");
     selectAllBtn.addEventListener("click", () => {
@@ -635,76 +664,8 @@ function renderGrowthChart() {
     if (chartType === "line") {
         labels = dates;
         if (selectedIdols.length === 0) {
-            if (activeView === "group") {
-                const groupsList = idolsList.filter(i => i.type === "group");
-                const activeGroups = groupsList.filter(g => {
-                    if (filterGroup !== "all" && g.group !== filterGroup) return false;
-                    if (filterColor !== "all" && g.color !== filterColor) return false;
-                    return true;
-                });
-                
-                activeGroups.forEach((group, idx) => {
-                    const groupHistory = historyData.filter(r => r.Idol_Name.toLowerCase() === group.name.toLowerCase() && r.Platform === activePlatformName);
-                    const dataPoints = dates.map(date => {
-                        const rec = groupHistory.find(r => r.Date === date);
-                        return rec ? intVal(rec.Follower_Count) : null;
-                    });
-                    
-                    datasets.push({
-                        label: group.name,
-                        data: dataPoints,
-                        borderColor: group.color || palette[idx % palette.length],
-                        backgroundColor: "transparent",
-                        tension: 0.3,
-                        borderWidth: 3,
-                        fill: false
-                    });
-                    plottedIdols.push(group.name);
-                });
-                
-                const groupContext = filterGroup !== "all" ? ` - ${filterGroup}` : "";
-                document.querySelector(".chart-header h2").innerText = `Official Groups Trend${groupContext} (${activePlatformName})`;
-                document.querySelector(".chart-subtitle").innerText = "Displaying official channels. Select group card headers below to analyze platform distribution.";
-            } else {
-                const membersList = idolsList.filter(i => i.type === "member");
-                const activeMembers = membersList.filter(m => {
-                    if (filterGroup !== "all" && m.group !== filterGroup) return false;
-                    if (filterColor !== "all" && m.color !== filterColor) return false;
-                    return true;
-                });
-                
-                activeMembers.forEach(m => m.latestStats = getLatestStats(m.name));
-                activeMembers.sort((a, b) => b.latestStats[activePlatformName] - a.latestStats[activePlatformName]);
-                const top10 = activeMembers.slice(0, 10);
-                
-                top10.forEach((member, idx) => {
-                    const memberHistory = historyData.filter(r => r.Idol_Name.toLowerCase() === member.name.toLowerCase() && r.Platform === activePlatformName);
-                    const dataPoints = dates.map(date => {
-                        const rec = memberHistory.find(r => r.Date === date);
-                        return rec ? intVal(rec.Follower_Count) : null;
-                    });
-                    
-                    datasets.push({
-                        label: member.name,
-                        data: dataPoints,
-                        borderColor: member.color || palette[idx % palette.length],
-                        backgroundColor: "transparent",
-                        tension: 0.3,
-                        borderWidth: 2.5,
-                        fill: false
-                    });
-                    plottedIdols.push(member.name);
-                });
-                
-                const filterContext = [];
-                if (filterGroup !== "all") filterContext.push(filterGroup);
-                if (filterColor !== "all") filterContext.push(filterColor);
-                const contextStr = filterContext.length > 0 ? ` - ${filterContext.join(", ")}` : "";
-                
-                document.querySelector(".chart-header h2").innerText = `Top 10${contextStr} (${activePlatformName})`;
-                document.querySelector(".chart-subtitle").innerText = "Displaying top members. Select member card headers below to build comparative plots.";
-            }
-            
+            document.querySelector(".chart-header h2").innerText = activeView === "group" ? `Official Groups Trend (${activePlatformName})` : `Top 10 Trend (${activePlatformName})`;
+            document.querySelector(".chart-subtitle").innerText = "No profiles selected. Select card headers below to plot growth trends.";
         } else if (selectedIdols.length === 1) {
             const targetName = selectedIdols[0];
             const historyList = historyData.filter(r => r.Idol_Name.toLowerCase() === targetName.toLowerCase());
@@ -778,70 +739,8 @@ function renderGrowthChart() {
     } else {
         // Render Bar Chart (Latest Standings)
         if (selectedIdols.length === 0) {
-            if (activeView === "group") {
-                const groupsList = idolsList.filter(i => i.type === "group");
-                const activeGroups = groupsList.filter(g => {
-                    if (filterGroup !== "all" && g.group !== filterGroup) return false;
-                    if (filterColor !== "all" && g.color !== filterColor) return false;
-                    return true;
-                });
-                
-                activeGroups.forEach(g => g.latestStats = getLatestStats(g.name));
-                labels = activeGroups.map(g => g.name);
-                const dataValues = activeGroups.map(g => g.latestStats[activePlatformName] || 0);
-                const barColors = activeGroups.map((g, idx) => g.color || palette[idx % palette.length]);
-                
-                datasets.push({
-                    label: "Followers",
-                    data: dataValues,
-                    backgroundColor: barColors.map(c => c + "33"),
-                    borderColor: barColors,
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    barPercentage: 0.5,
-                    categoryPercentage: 0.8
-                });
-                plottedIdols = labels;
-                
-                const groupContext = filterGroup !== "all" ? ` - ${filterGroup}` : "";
-                document.querySelector(".chart-header h2").innerText = `Official Groups${groupContext} (${activePlatformName})`;
-                document.querySelector(".chart-subtitle").innerText = "Displaying latest snapshot standing metrics. Select card headers below to change parameters.";
-            } else {
-                const membersList = idolsList.filter(i => i.type === "member");
-                const activeMembers = membersList.filter(m => {
-                    if (filterGroup !== "all" && m.group !== filterGroup) return false;
-                    if (filterColor !== "all" && m.color !== filterColor) return false;
-                    return true;
-                });
-                
-                activeMembers.forEach(m => m.latestStats = getLatestStats(m.name));
-                activeMembers.sort((a, b) => b.latestStats[activePlatformName] - a.latestStats[activePlatformName]);
-                const top10 = activeMembers.slice(0, 10);
-                
-                labels = top10.map(m => m.name);
-                const dataValues = top10.map(m => m.latestStats[activePlatformName] || 0);
-                const barColors = top10.map((m, idx) => m.color || palette[idx % palette.length]);
-                
-                datasets.push({
-                    label: "Followers",
-                    data: dataValues,
-                    backgroundColor: barColors.map(c => c + "33"),
-                    borderColor: barColors,
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    barPercentage: 0.5,
-                    categoryPercentage: 0.8
-                });
-                plottedIdols = labels;
-                
-                const filterContext = [];
-                if (filterGroup !== "all") filterContext.push(filterGroup);
-                if (filterColor !== "all") filterContext.push(filterColor);
-                const contextStr = filterContext.length > 0 ? ` - ${filterContext.join(", ")}` : "";
-                
-                document.querySelector(".chart-header h2").innerText = `Top 10${contextStr} (${activePlatformName})`;
-                document.querySelector(".chart-subtitle").innerText = "Displaying top members' latest standings. Select cards below to compare profiles.";
-            }
+            document.querySelector(".chart-header h2").innerText = activeView === "group" ? `Official Groups (${activePlatformName})` : `Top 10 (${activePlatformName})`;
+            document.querySelector(".chart-subtitle").innerText = "No profiles selected. Select card headers below to plot standings.";
         } else if (selectedIdols.length === 1) {
             const targetName = selectedIdols[0];
             const stats = getLatestStats(targetName);
