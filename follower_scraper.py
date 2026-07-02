@@ -3,6 +3,8 @@ import re
 import json
 import csv
 import argparse
+import time
+import random
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
@@ -39,29 +41,50 @@ def clean_count_str(count_str: str) -> int:
 def scrape_instagram(handle: str) -> int:
     """
     Scrapes the public follower count of an Instagram profile using Googlebot User-Agent.
+    Includes staggered delays and retries to bypass transient rate limits.
     """
     url = f"https://www.instagram.com/{handle}/"
-    response = requests.get(url, headers=GOOGLEBOT_HEADERS, timeout=15)
-    if response.status_code != 200:
-        raise ValueError(f"Instagram returned status code {response.status_code}")
-        
-    soup = BeautifulSoup(response.text, 'html.parser')
-    desc_tag = soup.find('meta', attrs={'name': 'description'}) or soup.find('meta', attrs={'property': 'og:description'})
-    if not desc_tag or not desc_tag.get('content'):
-        raise ValueError("Could not find meta description tag for Instagram")
-        
-    content = desc_tag['content']
-    match = re.search(r'([\d\.,]+[MK]?)\s+Followers', content, re.IGNORECASE)
-    if not match:
-        raise ValueError(f"Followers pattern not found in meta description: '{content}'")
-        
-    return clean_count_str(match.group(1))
+    
+    # Introduce staggered start to spread concurrent requests
+    time.sleep(random.uniform(0.5, 2.5))
+    
+    for attempt in range(3):
+        try:
+            response = requests.get(url, headers=GOOGLEBOT_HEADERS, timeout=15)
+            if response.status_code != 200:
+                time.sleep(2)
+                continue
+                
+            soup = BeautifulSoup(response.text, 'html.parser')
+            desc_tag = soup.find('meta', attrs={'name': 'description'}) or soup.find('meta', attrs={'property': 'og:description'})
+            if not desc_tag or not desc_tag.get('content'):
+                time.sleep(2)
+                continue
+                
+            content = desc_tag['content']
+            match = re.search(r'([\d\.,]+[MK]?)\s+Followers', content, re.IGNORECASE)
+            if not match:
+                # If we got the login screen redirect page
+                time.sleep(2.5)
+                continue
+                
+            return clean_count_str(match.group(1))
+        except Exception as e:
+            if attempt == 2:
+                raise e
+            time.sleep(2)
+            
+    raise ValueError("Instagram rate limit active (returned sign-in page) after 3 attempts")
 
 def scrape_facebook(page_name: str) -> int:
     """
     Scrapes the public likes/followers count of a Facebook page using Googlebot User-Agent.
     """
     url = f"https://www.facebook.com/{page_name}"
+    
+    # Stagger requests
+    time.sleep(random.uniform(0.2, 1.2))
+    
     response = requests.get(url, headers=GOOGLEBOT_HEADERS, timeout=15)
     if response.status_code != 200:
         raise ValueError(f"Facebook returned status code {response.status_code}")
@@ -86,6 +109,10 @@ def scrape_x_and_avatar(handle: str) -> tuple:
     Scrapes public follower count and high-res profile image URL of an X (Twitter) profile.
     """
     url = f"https://x.com/{handle}"
+    
+    # Stagger requests
+    time.sleep(random.uniform(0.2, 1.2))
+    
     response = requests.get(url, headers=CHROME_HEADERS, timeout=15)
     if response.status_code != 200:
         raise ValueError(f"X returned status code {response.status_code}")
@@ -276,7 +303,6 @@ def get_today_backup_csv(csv_path, today_str):
                 if len(r) == 6 and r[0] == today_str:
                     try:
                         backups[(r[2], r[3])] = int(r[5])
-                      # Rows: Date, Timestamp, Idol_Name, Platform, Username, Follower_Count
                     except ValueError:
                         pass
         print(f"Loaded {len(backups)} CSV backups for {today_str}.")
