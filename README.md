@@ -89,6 +89,7 @@ A parallelized scraping script that:
 *   **Dashboard Deployment**: Linked to your GitHub repository and automatically redeploys on every git commit.
 *   **Serverless API**: Exposes the python function `/api/stats` to fetch Postgres records as JSON.
 *   **Integration**: Neon Postgres is linked via the Vercel integrations dashboard, exposing the `POSTGRES_URL` connection secret at runtime.
+*   **Web Analytics & Speed Insights**: Integrates Vercel's real-time visitor analytics and PageSpeed performance monitoring (configured via vanilla script tags in `index.html`'s head).
 *   **Offline Development**: Running `python3 -m http.server 8000` will run the app locally, automatically falling back to parsing the local `follower_history.csv` dataset.
 
 ### 2. GitHub Actions Scheduled Jobs
