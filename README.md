@@ -98,6 +98,24 @@ A parallelized scraping script that:
 *   **Real-time Logs**: You can view the status and live crawler stdout at:
     🔗 [https://github.com/pavinss2/thaidoru-stats/actions](https://github.com/pavinss2/thaidoru-stats/actions)
 
+### 3. Adhoc Runs & Manual Migrations
+
+If you need to manually upload statistics or run targeted scraper jobs on specific members, you can use the following scripts:
+
+#### A. Migrate Local CSV History to Neon Postgres
+To copy your local `follower_history.csv` data into the Neon database (which resolves duplicate runs via key conflicts and runs linear database interpolation):
+```bash
+python3 import_csv_to_postgres.py
+```
+*(This script will automatically read credentials from your local `.env.local` file).*
+
+#### B. Run Targeted Adhoc Scraping for Specific Members
+To run the scraper on-demand for specific members (e.g., Best, Pin, Praew) and save their counts directly into your Neon PostgreSQL database:
+```bash
+python3 adhoc_scrape.py Best Pin Praew
+```
+You can pass any list of member names separated by spaces.
+
 ---
 
 ## 🎨 Technology Stack
