@@ -139,8 +139,10 @@ jobs:
       with:
         python-version: '3.10'
     - name: Install dependencies
-      run: pip install requests
+      run: pip install requests beautifulsoup4 psycopg2-binary
     - name: Send Initial Scraping Alert
+      env:
+        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       run: python3 follower_scraper.py --send-alert initial
 
   # Retry Jobs (Parallel platforms, dependent on initial runs)
