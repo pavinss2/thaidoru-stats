@@ -646,6 +646,37 @@ body {
     box-shadow: 0 0 10px rgba(157, 77, 255, 0.3);
 }
 
+/* Select All Action Button */
+.select-all-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 122, 255, 0.1);
+    border: 1px solid rgba(0, 122, 255, 0.2);
+    color: #007AFF;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-family: var(--font-primary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    backdrop-filter: blur(12px);
+    height: 31px;
+}
+
+.select-all-btn:hover {
+    background: rgba(0, 122, 255, 0.2);
+    border-color: rgba(0, 122, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.15);
+}
+
+.select-all-btn i {
+    width: 14px;
+    height: 14px;
+}
+
 /* Clear Selection Action Button */
 .clear-btn {
     display: inline-flex;

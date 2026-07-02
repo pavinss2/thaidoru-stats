@@ -80,10 +80,10 @@
                     <div class="date-filters">
                         <!-- Chart Type Toggle -->
                         <div class="toggle-group" id="chart-type-toggle">
-                            <button class="toggle-btn active" data-type="line" title="Growth Trend Line">
+                            <button class="toggle-btn" data-type="line" title="Growth Trend Line">
                                 <i data-lucide="trending-up"></i> Trend
                             </button>
-                            <button class="toggle-btn" data-type="bar" title="Latest Standings Bar">
+                            <button class="toggle-btn active" data-type="bar" title="Latest Standings Bar">
                                 <i data-lucide="bar-chart-3"></i> Standings
                             </button>
                         </div>
@@ -97,11 +97,11 @@
                                 <option value="tiktok">TikTok</option>
                             </select>
                         </div>
-                        <div class="date-select-wrapper" id="start-date-wrapper">
+                        <div class="date-select-wrapper" id="start-date-wrapper" style="opacity: 0.3; pointer-events: none;">
                             <label for="start-date-select">From:</label>
                             <select id="start-date-select"></select>
                         </div>
-                        <div class="date-select-wrapper" id="end-date-wrapper">
+                        <div class="date-select-wrapper" id="end-date-wrapper" style="opacity: 0.3; pointer-events: none;">
                             <label for="end-date-select">To:</label>
                             <select id="end-date-select"></select>
                         </div>
@@ -180,7 +180,10 @@
                             </select>
                         </div>
 
-                        <!-- Clear Selection Button -->
+                        <!-- Selection Controls -->
+                        <button id="select-all-btn" class="select-all-btn">
+                            <i data-lucide="check-square"></i> Select All
+                        </button>
                         <button id="clear-selection-btn" class="clear-btn" style="display: none;">
                             <i data-lucide="x-circle"></i> Clear Selection
                         </button>

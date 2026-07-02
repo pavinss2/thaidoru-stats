@@ -16,7 +16,7 @@ let sortSelect = "name";
 let startDate = "";
 let endDate = "";
 let chartPlatform = "instagram"; // Plotted SNS platform
-let chartType = "line"; // Plotted chart view type ("line" or "bar")
+let chartType = "bar"; // Plotted chart view type ("line" or "bar")
 
 // Multi-selection comparative tracking
 let selectedIdols = []; // Array of selected member/group names
@@ -277,6 +277,33 @@ function setupFilters() {
             }
             renderGrowthChart();
         });
+    });
+
+    // Select All Button Click
+    const selectAllBtn = document.getElementById("select-all-btn");
+    selectAllBtn.addEventListener("click", () => {
+        let itemsToSelect = [];
+        if (activeView === "group") {
+            const groupsList = idolsList.filter(i => i.type === "group");
+            itemsToSelect = groupsList.filter(group => {
+                if (searchQuery && !group.name.toLowerCase().includes(searchQuery)) return false;
+                if (filterGroup !== "all" && group.group !== filterGroup) return false;
+                if (filterColor !== "all" && group.color !== filterColor) return false;
+                return true;
+            });
+        } else {
+            const membersList = idolsList.filter(i => i.type === "member");
+            itemsToSelect = membersList.filter(member => {
+                if (searchQuery && !member.name.toLowerCase().includes(searchQuery) && !member.group.toLowerCase().includes(searchQuery)) return false;
+                if (filterGroup !== "all" && member.group !== filterGroup) return false;
+                if (filterColor !== "all" && member.color !== filterColor) return false;
+                return true;
+            });
+        }
+        
+        selectedIdols = itemsToSelect.map(item => item.name);
+        filterAndRender();
+        renderGrowthChart();
     });
 
     // Clear Selection Button Click
@@ -724,15 +751,19 @@ function renderGrowthChart() {
             document.querySelector(".chart-header h2").innerHTML = `<span style="color: ${idolColor}; text-shadow: 0 0 10px color-mix(in srgb, ${idolColor} 40%, transparent);">${targetName}</span> <span style="font-size: 14px; color: var(--text-secondary);">(${typeLabel})</span> - Latest Standings`;
             document.querySelector(".chart-subtitle").innerText = "Displaying distribution standings across platforms for this item.";
         } else {
-            labels = selectedIdols;
-            const dataValues = selectedIdols.map(name => {
+            const items = selectedIdols.map((name, idx) => {
                 const stats = getLatestStats(name);
-                return stats[activePlatformName] || 0;
-            });
-            const barColors = selectedIdols.map((name, idx) => {
+                const count = stats[activePlatformName] || 0;
                 const config = idolsList.find(i => i.name.toLowerCase() === name.toLowerCase());
-                return (config && config.color) || palette[idx % palette.length];
+                const color = (config && config.color) || palette[idx % palette.length];
+                return { name, count, color };
             });
+            
+            items.sort((a, b) => b.count - a.count);
+            
+            labels = items.map(item => item.name);
+            const dataValues = items.map(item => item.count);
+            const barColors = items.map(item => item.color);
             
             datasets.push({
                 label: `Followers (${activePlatformName})`,
