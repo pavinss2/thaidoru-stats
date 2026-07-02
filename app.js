@@ -548,7 +548,7 @@ function renderGrowthChart() {
                 });
                 
                 const groupContext = filterGroup !== "all" ? ` - ${filterGroup}` : "";
-                document.querySelector(".chart-header h2").innerText = `Official Groups Follower Growth${groupContext} (${activePlatformName})`;
+                document.querySelector(".chart-header h2").innerText = `Official Groups Trend${groupContext} (${activePlatformName})`;
                 document.querySelector(".chart-subtitle").innerText = "Displaying official channels. Select group card headers below to analyze platform distribution.";
             } else {
                 const membersList = idolsList.filter(i => i.type === "member");
@@ -584,9 +584,9 @@ function renderGrowthChart() {
                 const filterContext = [];
                 if (filterGroup !== "all") filterContext.push(filterGroup);
                 if (filterColor !== "all") filterContext.push(filterColor);
-                const contextStr = filterContext.length > 0 ? ` - ${filterContext.join(", ")}` : " from All Groups";
+                const contextStr = filterContext.length > 0 ? ` - ${filterContext.join(", ")}` : "";
                 
-                document.querySelector(".chart-header h2").innerText = `Top 10 Members${contextStr} (${activePlatformName})`;
+                document.querySelector(".chart-header h2").innerText = `Top 10${contextStr} (${activePlatformName})`;
                 document.querySelector(".chart-subtitle").innerText = "Displaying top members. Select member card headers below to build comparative plots.";
             }
             
@@ -655,7 +655,7 @@ function renderGrowthChart() {
                 return `<span style="color: ${color}; text-shadow: 0 0 8px color-mix(in srgb, ${color} 30%, transparent);">${name}</span>`;
             }).join(", ");
             
-            document.querySelector(".chart-header h2").innerHTML = `Comparative Plot (${activePlatformName})`;
+            document.querySelector(".chart-header h2").innerHTML = `Comparative Trend (${activePlatformName})`;
             document.querySelector(".chart-subtitle").innerHTML = `Tracking selected items: ${coloredNames}`;
         }
     } else {
@@ -687,7 +687,7 @@ function renderGrowthChart() {
                 plottedIdols = labels;
                 
                 const groupContext = filterGroup !== "all" ? ` - ${filterGroup}` : "";
-                document.querySelector(".chart-header h2").innerText = `Official Groups Follower Standings${groupContext} (${activePlatformName})`;
+                document.querySelector(".chart-header h2").innerText = `Official Groups${groupContext} (${activePlatformName})`;
                 document.querySelector(".chart-subtitle").innerText = "Displaying latest snapshot standing metrics. Select card headers below to change parameters.";
             } else {
                 const membersList = idolsList.filter(i => i.type === "member");
@@ -720,9 +720,9 @@ function renderGrowthChart() {
                 const filterContext = [];
                 if (filterGroup !== "all") filterContext.push(filterGroup);
                 if (filterColor !== "all") filterContext.push(filterColor);
-                const contextStr = filterContext.length > 0 ? ` - ${filterContext.join(", ")}` : " from All Groups";
+                const contextStr = filterContext.length > 0 ? ` - ${filterContext.join(", ")}` : "";
                 
-                document.querySelector(".chart-header h2").innerText = `Top 10 Members Standings${contextStr} (${activePlatformName})`;
+                document.querySelector(".chart-header h2").innerText = `Top 10${contextStr} (${activePlatformName})`;
                 document.querySelector(".chart-subtitle").innerText = "Displaying top members' latest standings. Select cards below to compare profiles.";
             }
         } else if (selectedIdols.length === 1) {
@@ -748,7 +748,7 @@ function renderGrowthChart() {
             const idolColor = (idolConfig && idolConfig.color) || "#FFFFFF";
             const typeLabel = idolConfig?.type === "group" ? "Group" : "Member";
             
-            document.querySelector(".chart-header h2").innerHTML = `<span style="color: ${idolColor}; text-shadow: 0 0 10px color-mix(in srgb, ${idolColor} 40%, transparent);">${targetName}</span> <span style="font-size: 14px; color: var(--text-secondary);">(${typeLabel})</span> - Latest Standings`;
+            document.querySelector(".chart-header h2").innerHTML = `<span style="color: ${idolColor}; text-shadow: 0 0 10px color-mix(in srgb, ${idolColor} 40%, transparent);">${targetName}</span> <span style="font-size: 14px; color: var(--text-secondary);">(${typeLabel})</span>`;
             document.querySelector(".chart-subtitle").innerText = "Displaying distribution standings across platforms for this item.";
         } else {
             const items = selectedIdols.map((name, idx) => {
