@@ -10,13 +10,13 @@ The system is built on a modern, distributed serverless architecture that mainta
 
 ```mermaid
 graph TD
-    subgraph GitHub Actions VM (Daily Scraper Runner)
+    subgraph "GitHub Actions VM (Daily Scraper Runner)"
         A[idols.json] -->|Active Profiles| B(follower_scraper.py)
         B -->|1. Scrape Stats Concurrently| C{X, IG, FB, TikTok}
         B -->|2. Write SQL Inserts| D[(Neon Postgres DB)]
     end
 
-    subgraph Vercel Production Environment
+    subgraph "Vercel Production Environment"
         E[Frontend Dashboard] -->|3. Fetch /api/stats| F[stats.py API Endpoint]
         F -->|4. Query Data| D
         D -->|5. Return JSON Records| F
