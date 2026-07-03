@@ -585,7 +585,7 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
             print("1. Go to your GitHub repository: Settings -> Secrets and variables -> Actions")
             print("2. Click 'New repository secret'")
             print("3. Name: POSTGRES_URL")
-            print("4. Value: postgresql://neondb_owner:REDACTED_DB_PASS@ep-flat-dew-ai5tluqc-pooler.c-4.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require")
+            print("4. Value: <your_neon_postgresql_connection_string>")
             print("=========================================================================")
             
     if postgres_url:
