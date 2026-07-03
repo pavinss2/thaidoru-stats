@@ -68,7 +68,7 @@ async function loadDatasets() {
             historyData = parseCSV(csvText);
         }
         
-        // Inject latestStats to idolsList
+        // Inject latestStats to idolsList using the same logic as the homepage (fallback to latest non-zero count)
         idolsList.forEach(idol => {
             idol.latestStats = {
                 Instagram: 0,
@@ -78,14 +78,30 @@ async function loadDatasets() {
             };
             const memberRecords = historyData.filter(r => r.Idol_Name.toLowerCase() === idol.name.toLowerCase());
             if (memberRecords.length > 0) {
-                // Find latest date record
-                const sorted = memberRecords.sort((a, b) => new Date(b.Date) - new Date(a.Date));
-                const latestDate = sorted[0].Date;
-                const latestDayRecords = sorted.filter(r => r.Date === latestDate);
-                latestDayRecords.forEach(r => {
-                    if (idol.latestStats[r.Platform] !== undefined) {
-                        idol.latestStats[r.Platform] = intVal(r.Follower_Count);
+                const platforms = ["Instagram", "X", "Facebook", "TikTok"];
+                platforms.forEach(platform => {
+                    const platformRecords = memberRecords.filter(r => r.Platform.toLowerCase() === platform.toLowerCase());
+                    
+                    // Sort oldest to newest
+                    platformRecords.sort((a, b) => {
+                        const dateComp = a.Date.localeCompare(b.Date);
+                        if (dateComp !== 0) return dateComp;
+                        return (a.Timestamp || "").localeCompare(b.Timestamp || "");
+                    });
+                    
+                    // Traverse backwards to find the first non-zero count
+                    let count = 0;
+                    for (let i = platformRecords.length - 1; i >= 0; i--) {
+                        const val = intVal(platformRecords[i].Follower_Count);
+                        if (val > 0) {
+                            count = val;
+                            break;
+                        }
                     }
+                    
+                    // Map to normalized platform casing key
+                    const normalizedPlatform = platformRecords.length > 0 ? platformRecords[0].Platform : platform;
+                    idol.latestStats[normalizedPlatform] = count;
                 });
             }
         });
@@ -477,12 +493,7 @@ function renderProfileChart() {
                     meta.data.forEach((bar, index) => {
                         const dataVal = dataset.data[index];
                         if (dataVal !== null && dataVal !== undefined && dataVal > 0) {
-                            let formattedVal = dataVal;
-                            if (dataVal >= 1e6) {
-                                formattedVal = parseFloat((dataVal / 1e6).toFixed(2)) + 'M';
-                            } else if (dataVal >= 1e3) {
-                                formattedVal = parseFloat((dataVal / 1e3).toFixed(2)) + 'k';
-                            }
+                            let formattedVal = new Intl.NumberFormat().format(dataVal);
                             ctx.fillStyle = '#FFFFFF';
                             ctx.fillText(formattedVal, bar.x, bar.y - 8);
                         }

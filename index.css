@@ -1176,6 +1176,8 @@ a.platform-metric:hover {
 @media (max-width: 900px) {
     .profile-layout {
         grid-template-columns: 1fr;
+        gap: 15px; /* Reduced vertical gap on mobile */
+        margin-top: 10px;
     }
     .profile-sidebar {
         width: 100%;
