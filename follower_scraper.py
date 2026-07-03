@@ -39,13 +39,51 @@ def clean_count_str(count_str: str) -> int:
     except ValueError as e:
         raise ValueError(f"Could not parse count string '{count_str}': {e}")
 
+def scrape_instagram_socialblade(username: str) -> int:
+    """
+    Scrapes Instagram followers from SocialBlade using __NEXT_DATA__ parsing.
+    """
+    clean_name = username.lstrip('@')
+    url = f"https://socialblade.com/instagram/user/{clean_name}"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
+    
+    # Stagger requests
+    time.sleep(random.uniform(0.2, 1.2))
+    
+    response = requests.get(url, headers=headers, timeout=10)
+    # Even if 401, we try to parse it
+    soup = BeautifulSoup(response.text, 'html.parser')
+    next_data = soup.find('script', id='__NEXT_DATA__')
+    if next_data:
+        json_data = json.loads(next_data.string)
+        queries = json_data.get('props', {}).get('pageProps', {}).get('trpcState', {}).get('json', {}).get('queries', [])
+        for q in queries:
+            q_data = q.get('state', {}).get('data')
+            if q_data and isinstance(q_data, dict) and 'followers' in q_data:
+                followers = q_data.get('followers')
+                if followers is not None:
+                    return int(followers)
+                        
+    raise ValueError(f"SocialBlade returned status {response.status_code} or followers not found in __NEXT_DATA__")
+
 def scrape_instagram(handle: str) -> int:
     """
     Scrapes the public follower count of an Instagram profile.
-    First attempts to query instastatistics.com for the exact follower count.
-    Falls back to scraping the raw Instagram public profile if instastatistics is down or rate-limited.
+    First attempts to query SocialBlade, then falls back to instastatistics.com,
+    and finally crawls the direct Instagram profile if those fail.
     """
-    # 1. Attempt instastatistics.com first (for exact counts)
+    # 1. Attempt SocialBlade first (exact count check)
+    try:
+        print(f"Attempting SocialBlade first for Instagram handle: {handle}")
+        return scrape_instagram_socialblade(handle)
+    except Exception as e:
+        print(f"SocialBlade Instagram scraper failed for {handle}: {e}. Trying Instastatistics next.")
+
+    # 2. Attempt instastatistics.com next (for exact counts)
     try:
         url_is = f"https://instastatistics.com/{handle}"
         time.sleep(random.uniform(0.5, 1.5))
