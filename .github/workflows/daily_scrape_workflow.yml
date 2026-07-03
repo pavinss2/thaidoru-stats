@@ -9,9 +9,9 @@ permissions:
   contents: write
 
 jobs:
-  # Scrape Jobs (Concurrently run each platform)
   scrape_instagram:
     runs-on: ubuntu-latest
+    timeout-minutes: 16
     steps:
     - name: Check out repository
       uses: actions/checkout@v3
@@ -27,19 +27,10 @@ jobs:
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       run: python3 follower_scraper.py --run --platform instagram
-    - name: Commit and Push failed scrapes
-      if: success() || failure()
-      run: |
-        git config --global user.name "Github Actions Scraper Bot"
-        git config --global user.email "actions@github.com"
-        git add failed_scrapes_instagram.json || true
-        git commit -m "Log Instagram failed scrapes: $(date +'%Y-%m-%d')" || exit 0
-        for i in {1..5}; do
-          git pull --rebase && git push && break || sleep 5
-        done
 
   scrape_x:
     runs-on: ubuntu-latest
+    timeout-minutes: 16
     steps:
     - name: Check out repository
       uses: actions/checkout@v3
@@ -55,19 +46,20 @@ jobs:
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       run: python3 follower_scraper.py --run --platform x
-    - name: Commit and Push failed scrapes
+    - name: Commit and Push idols config updates (if avatar URL changed)
       if: success() || failure()
       run: |
         git config --global user.name "Github Actions Scraper Bot"
         git config --global user.email "actions@github.com"
-        git add failed_scrapes_x.json || true
-        git commit -m "Log X failed scrapes: $(date +'%Y-%m-%d')" || exit 0
+        git add idols.json || true
+        git commit -m "Auto-update X avatars: $(date +'%Y-%m-%d')" || exit 0
         for i in {1..5}; do
           git pull --rebase && git push && break || sleep 5
         done
 
   scrape_facebook:
     runs-on: ubuntu-latest
+    timeout-minutes: 16
     steps:
     - name: Check out repository
       uses: actions/checkout@v3
@@ -83,19 +75,10 @@ jobs:
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       run: python3 follower_scraper.py --run --platform facebook
-    - name: Commit and Push failed scrapes
-      if: success() || failure()
-      run: |
-        git config --global user.name "Github Actions Scraper Bot"
-        git config --global user.email "actions@github.com"
-        git add failed_scrapes_facebook.json || true
-        git commit -m "Log Facebook failed scrapes: $(date +'%Y-%m-%d')" || exit 0
-        for i in {1..5}; do
-          git pull --rebase && git push && break || sleep 5
-        done
 
   scrape_tiktok:
     runs-on: ubuntu-latest
+    timeout-minutes: 16
     steps:
     - name: Check out repository
       uses: actions/checkout@v3
@@ -113,19 +96,8 @@ jobs:
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       run: python3 follower_scraper.py --run --platform tiktok
-    - name: Commit and Push failed scrapes
-      if: success() || failure()
-      run: |
-        git config --global user.name "Github Actions Scraper Bot"
-        git config --global user.email "actions@github.com"
-        git add failed_scrapes_tiktok.json || true
-        git commit -m "Log TikTok failed scrapes: $(date +'%Y-%m-%d')" || exit 0
-        for i in {1..5}; do
-          git pull --rebase && git push && break || sleep 5
-        done
 
-  # Consolidated Alert for the initial scraping phase
-  send_initial_alert:
+  finalize_data:
     needs: [scrape_instagram, scrape_x, scrape_facebook, scrape_tiktok]
     runs-on: ubuntu-latest
     if: always()
@@ -140,214 +112,7 @@ jobs:
         python-version: '3.10'
     - name: Install dependencies
       run: pip install requests beautifulsoup4 psycopg2-binary
-    - name: Send Initial Scraping Alert
-      env:
-        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-      run: python3 follower_scraper.py --send-alert initial
-
-  # Retry Jobs (Parallel platforms, dependent on initial runs)
-  retry_instagram:
-    needs: scrape_instagram
-    runs-on: ubuntu-latest
-    if: always() && (needs.scrape_instagram.result == 'success' || needs.scrape_instagram.result == 'failure')
-    steps:
-    - name: Check out repository
-      uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Check if there are failed IG channels
-      id: check_failed
-      run: |
-        if [ -f failed_scrapes_instagram.json ]; then
-          echo "found=true" >> $GITHUB_OUTPUT
-        else
-          echo "found=false" >> $GITHUB_OUTPUT
-        fi
-    - name: Wait for 5 minutes before retry
-      if: steps.check_failed.outputs.found == 'true'
-      run: sleep 300
-    - name: Set up Python
-      if: steps.check_failed.outputs.found == 'true'
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-    - name: Install dependencies
-      if: steps.check_failed.outputs.found == 'true'
-      run: pip install requests beautifulsoup4 psycopg2-binary
-    - name: Run Instagram Scraper Retry
-      if: steps.check_failed.outputs.found == 'true'
-      env:
-        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-      run: python3 follower_scraper.py --run --platform instagram --failed-file failed_scrapes_instagram.json
-    - name: Commit and Push retry results
-      if: steps.check_failed.outputs.found == 'true'
-      run: |
-        git config --global user.name "Github Actions Scraper Bot"
-        git config --global user.email "actions@github.com"
-        rm -f failed_scrapes_instagram.json
-        git add failed_scrapes_instagram.json || true
-        git commit -m "Auto-retry failed Instagram follower metrics: $(date +'%Y-%m-%d')" || exit 0
-        for i in {1..5}; do
-          git pull --rebase && git push && break || sleep 5
-        done
-
-  retry_x:
-    needs: scrape_x
-    runs-on: ubuntu-latest
-    if: always() && (needs.scrape_x.result == 'success' || needs.scrape_x.result == 'failure')
-    steps:
-    - name: Check out repository
-      uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Check if there are failed X channels
-      id: check_failed
-      run: |
-        if [ -f failed_scrapes_x.json ]; then
-          echo "found=true" >> $GITHUB_OUTPUT
-        else
-          echo "found=false" >> $GITHUB_OUTPUT
-        fi
-    - name: Wait for 5 minutes before retry
-      if: steps.check_failed.outputs.found == 'true'
-      run: sleep 300
-    - name: Set up Python
-      if: steps.check_failed.outputs.found == 'true'
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-    - name: Install dependencies
-      if: steps.check_failed.outputs.found == 'true'
-      run: pip install requests beautifulsoup4 psycopg2-binary
-    - name: Run X Scraper Retry
-      if: steps.check_failed.outputs.found == 'true'
-      env:
-        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-      run: python3 follower_scraper.py --run --platform x --failed-file failed_scrapes_x.json
-    - name: Commit and Push retry results
-      if: steps.check_failed.outputs.found == 'true'
-      run: |
-        git config --global user.name "Github Actions Scraper Bot"
-        git config --global user.email "actions@github.com"
-        rm -f failed_scrapes_x.json
-        git add failed_scrapes_x.json || true
-        git commit -m "Auto-retry failed X follower metrics: $(date +'%Y-%m-%d')" || exit 0
-        for i in {1..5}; do
-          git pull --rebase && git push && break || sleep 5
-        done
-
-  retry_facebook:
-    needs: scrape_facebook
-    runs-on: ubuntu-latest
-    if: always() && (needs.scrape_facebook.result == 'success' || needs.scrape_facebook.result == 'failure')
-    steps:
-    - name: Check out repository
-      uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Check if there are failed Facebook channels
-      id: check_failed
-      run: |
-        if [ -f failed_scrapes_facebook.json ]; then
-          echo "found=true" >> $GITHUB_OUTPUT
-        else
-          echo "found=false" >> $GITHUB_OUTPUT
-        fi
-    - name: Wait for 5 minutes before retry
-      if: steps.check_failed.outputs.found == 'true'
-      run: sleep 300
-    - name: Set up Python
-      if: steps.check_failed.outputs.found == 'true'
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-    - name: Install dependencies
-      if: steps.check_failed.outputs.found == 'true'
-      run: pip install requests beautifulsoup4 psycopg2-binary
-    - name: Run Facebook Scraper Retry
-      if: steps.check_failed.outputs.found == 'true'
-      env:
-        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-      run: python3 follower_scraper.py --run --platform facebook --failed-file failed_scrapes_facebook.json
-    - name: Commit and Push retry results
-      if: steps.check_failed.outputs.found == 'true'
-      run: |
-        git config --global user.name "Github Actions Scraper Bot"
-        git config --global user.email "actions@github.com"
-        rm -f failed_scrapes_facebook.json
-        git add failed_scrapes_facebook.json || true
-        git commit -m "Auto-retry failed Facebook follower metrics: $(date +'%Y-%m-%d')" || exit 0
-        for i in {1..5}; do
-          git pull --rebase && git push && break || sleep 5
-        done
-
-  retry_tiktok:
-    needs: scrape_tiktok
-    runs-on: ubuntu-latest
-    if: always() && (needs.scrape_tiktok.result == 'success' || needs.scrape_tiktok.result == 'failure')
-    steps:
-    - name: Check out repository
-      uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Check if there are failed TikTok channels
-      id: check_failed
-      run: |
-        if [ -f failed_scrapes_tiktok.json ]; then
-          echo "found=true" >> $GITHUB_OUTPUT
-        else
-          echo "found=false" >> $GITHUB_OUTPUT
-        fi
-    - name: Wait for 5 minutes before retry
-      if: steps.check_failed.outputs.found == 'true'
-      run: sleep 300
-    - name: Set up Python
-      if: steps.check_failed.outputs.found == 'true'
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-    - name: Install dependencies
-      if: steps.check_failed.outputs.found == 'true'
-      run: |
-        pip install requests beautifulsoup4 playwright psycopg2-binary
-        playwright install --with-deps chromium
-    - name: Run TikTok Scraper Retry
-      if: steps.check_failed.outputs.found == 'true'
-      env:
-        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-      run: python3 follower_scraper.py --run --platform tiktok --failed-file failed_scrapes_tiktok.json
-    - name: Commit and Push retry results
-      if: steps.check_failed.outputs.found == 'true'
-      run: |
-        git config --global user.name "Github Actions Scraper Bot"
-        git config --global user.email "actions@github.com"
-        rm -f failed_scrapes_tiktok.json
-        git add failed_scrapes_tiktok.json || true
-        git commit -m "Auto-retry failed TikTok follower metrics: $(date +'%Y-%m-%d')" || exit 0
-        for i in {1..5}; do
-          git pull --rebase && git push && break || sleep 5
-        done
-
-  # Final Step: Database synthesis (runs after all retry jobs complete)
-  finalize_data:
-    needs: [retry_instagram, retry_x, retry_facebook, retry_tiktok]
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-    - name: Check out repository
-      uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-    - name: Install dependencies
-      run: pip install requests beautifulsoup4 psycopg2-binary
-    - name: Run Linear Data Synthesis
-      env:
-        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-      run: python3 follower_scraper.py --synthesize-only
     - name: Run Final Alert
-      if: always()
+      env:
+        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       run: python3 follower_scraper.py --send-alert final

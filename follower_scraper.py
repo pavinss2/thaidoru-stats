@@ -5,6 +5,7 @@ import csv
 import argparse
 import time
 import random
+import sys
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
@@ -106,10 +107,51 @@ def scrape_instagram(handle: str) -> int:
             
     raise ValueError("Instagram rate limit active (returned sign-in page) after 3 attempts")
 
+def scrape_facebook_socialblade(page_name: str) -> int:
+    """
+    Scrapes Facebook likes from SocialBlade using __NEXT_DATA__ parsing.
+    """
+    clean_name = page_name.lstrip('@')
+    url = f"https://socialblade.com/facebook/user/{clean_name}"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
+    
+    # Stagger requests
+    time.sleep(random.uniform(0.2, 1.2))
+    
+    response = requests.get(url, headers=headers, timeout=10)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        next_data = soup.find('script', id='__NEXT_DATA__')
+        if next_data:
+            json_data = json.loads(next_data.string)
+            queries = json_data.get('props', {}).get('pageProps', {}).get('trpcState', {}).get('json', {}).get('queries', [])
+            for q in queries:
+                q_data = q.get('state', {}).get('data')
+                if q_data and isinstance(q_data, dict) and 'likes' in q_data:
+                    likes = q_data.get('likes')
+                    if likes is not None:
+                        return int(likes)
+                        
+    raise ValueError(f"SocialBlade returned status {response.status_code} or likes not found in __NEXT_DATA__")
+
 def scrape_facebook(page_name: str) -> int:
     """
-    Scrapes the public likes/followers count of a Facebook page using Googlebot User-Agent.
+    Scrapes the public likes/followers count of a Facebook page.
+    Attempts to query SocialBlade first if page_name is a username.
+    Falls back to direct Facebook scraping.
     """
+    is_username = "profile.php" not in page_name and "id=" not in page_name
+    if is_username:
+        try:
+            print(f"Attempting SocialBlade first for Facebook username: {page_name}")
+            return scrape_facebook_socialblade(page_name)
+        except Exception as e:
+            print(f"SocialBlade scraper failed for {page_name}: {e}. Falling back to direct Facebook scrape.")
+
     url = f"https://www.facebook.com/{page_name}"
     
     # Stagger requests
@@ -529,8 +571,6 @@ def synthesize_missing_data(csv_path):
 # Main Execution Loop
 # ========================================================
 def run_scraper(config_path: str, output_path: str, target_platform: str = None, failed_file: str = None):
-    db_sync_status = "Skipped (Fallback to CSV)"
-    db_sync_error = None
     if not os.path.exists(config_path):
         print(f"Error: Configuration file '{config_path}' not found.")
         return
@@ -574,209 +614,256 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
         print(f"Retrying scraping for {len(active_idols)} profiles matching failed platforms.")
     else:
         print(f"Loaded {len(active_idols)} active profiles to scrape...")
-    if target_platform:
-        print(f"Limiting scraping to platform: {target_platform}")
-        
-    TZ_BKK = timezone(timedelta(hours=7))
-    now_bkk = datetime.now(TZ_BKK)
-    today_str = now_bkk.strftime('%Y-%m-%d')
-    now_time_str = now_bkk.strftime('%H:%M:%S')
-    results = []
-    all_alerts = []
-    
-    # Load today's backups
-    postgres_url = os.environ.get("POSTGRES_URL")
-    if not postgres_url:
-        print("WARNING: POSTGRES_URL environment variable is NOT set.")
-        if os.environ.get("GITHUB_ACTIONS") == "true":
-            print("::error::POSTGRES_URL secret is NOT configured in GitHub Repository Secrets. Follower data cannot be saved to PostgreSQL!")
-            print("=========================================================================")
-            print("To fix this:")
-            print("1. Go to your GitHub repository: Settings -> Secrets and variables -> Actions")
-            print("2. Click 'New repository secret'")
-            print("3. Name: POSTGRES_URL")
-            print("4. Value: <your_neon_postgresql_connection_string>")
-            print("=========================================================================")
+
+    original_active_idols = list(active_idols)
+    start_time = time.time()
+    attempt = 1
+
+    while True:
+        if attempt > 1:
+            print(f"\n--- RETRY ATTEMPT {attempt} ---")
+            print(f"Retrying scraping for {len(active_idols)} failed channels...")
+
+        db_sync_status = "Skipped (Fallback to CSV)"
+        db_sync_error = None
+
+        if target_platform:
+            print(f"Limiting scraping to platform: {target_platform}")
             
-    if postgres_url:
-        today_backups = get_today_backup_postgres(postgres_url, today_str)
-    else:
-        today_backups = get_today_backup_csv(output_path, today_str)
+        TZ_BKK = timezone(timedelta(hours=7))
+        now_bkk = datetime.now(TZ_BKK)
+        today_str = now_bkk.strftime('%Y-%m-%d')
+        now_time_str = now_bkk.strftime('%H:%M:%S')
+        results = []
+        all_alerts = []
         
-    # 1. Run HTTP platforms scrape concurrently (if applicable)
-    run_http = target_platform is None or target_platform.lower() in ("x", "instagram", "facebook")
-    http_truly_failed = []  # Channels with no backup and failed scrape
-    if run_http:
-        print("\nRunning X, Instagram, and Facebook scrapers concurrently...")
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = {executor.submit(scrape_idol_http_channels, idol, today_backups, target_platform): idol for idol in active_idols}
-            for future in as_completed(futures):
-                idol_name, local_res, alerts, truly_failed_channels = future.result()
-                all_alerts.extend(alerts)
-                http_truly_failed.extend(truly_failed_channels)
-                for res in local_res:
-                    results.append((today_str, now_time_str, idol_name, res[0], res[1], res[2]))
+        # Load today's backups
+        postgres_url = os.environ.get("POSTGRES_URL")
+        if not postgres_url:
+            print("WARNING: POSTGRES_URL environment variable is NOT set.")
+            if os.environ.get("GITHUB_ACTIONS") == "true":
+                print("::error::POSTGRES_URL secret is NOT configured in GitHub Repository Secrets. Follower data cannot be saved to PostgreSQL!")
+                print("=========================================================================")
+                print("To fix this:")
+                print("1. Go to your GitHub repository: Settings -> Secrets and variables -> Actions")
+                print("2. Click 'New repository secret'")
+                print("3. Name: POSTGRES_URL")
+                print("4. Value: <your_neon_postgresql_connection_string>")
+                print("=========================================================================")
                 
-    # 2. Run TikTok sequentially (using Playwright)
-    run_tiktok = (target_platform is None or target_platform.lower() == "tiktok") and any(idol.get("tiktok_handle") for idol in active_idols)
-    if run_tiktok:
-        print("\nStarting Playwright for TikTok profiles scraping...")
-        browser_instance = None
-        playwright_context = None
-        try:
-            from playwright.sync_api import sync_playwright
-            playwright_context = sync_playwright().start()
-            browser_instance = playwright_context.chromium.launch(headless=True)
+        if postgres_url:
+            today_backups = get_today_backup_postgres(postgres_url, today_str)
+        else:
+            today_backups = get_today_backup_csv(output_path, today_str)
             
-            for idol in active_idols:
-                name = idol.get("name")
-                tiktok_handle = idol.get("tiktok_handle")
-                if tiktok_handle:
-                    backup_val = today_backups.get((name, "TikTok"))
-                    print(f"  TikTok ({tiktok_handle})...")
-                    try:
-                        followers = scrape_tiktok(tiktok_handle, browser=browser_instance)
-                        if followers == 0 and backup_val is not None:
-                            print(f"Scraped 0 for {name} (TikTok), using backup: {backup_val}")
-                            followers = backup_val
-                        results.append((today_str, now_time_str, name, "TikTok", tiktok_handle, followers))
-                    except Exception as e:
-                        err_msg = str(e)
-                        all_alerts.append(f"TikTok Scrape Error for {name} ({tiktok_handle}): {err_msg}")
-                        if backup_val is not None:
-                            print(f"Scrape failed for {name} (TikTok), using backup count: {backup_val}")
-                            results.append((today_str, now_time_str, name, "TikTok", tiktok_handle, backup_val))
-                        else:
-                            if "429" in err_msg or "blocked" in err_msg.lower():
-                                all_alerts.append(f"::warning:: Blocked by TikTok while scraping {name} ({tiktok_handle})")
-        except Exception as e:
-            all_alerts.append(f"Playwright initialization error: {e}")
-        finally:
-            if browser_instance:
-                browser_instance.close()
-            if playwright_context:
-                playwright_context.stop()
-                
-    if all_alerts:
-        print("\n=== Scraping Alerts & Errors ===")
-        for alert in all_alerts:
-            print(alert)
-        with open("alerts.log", "w", encoding="utf-8") as af:
-            af.write("\n".join(all_alerts) + "\n")
-            
-    if not results:
-        print("\nNo results scraped. Exiting.")
-        return
-        
-    if postgres_url:
-        try:
-            save_results_to_postgres(results, postgres_url)
-            db_sync_status = "Success"
-        except Exception as e:
-            print(f"Error saving stats to PostgreSQL: {e}")
-            db_sync_status = f"Failed ({e})"
-            db_sync_error = e
-    else:
-        # Fallback to local CSV
-        existing_rows = []
-        headers = ["Date", "Timestamp", "Idol_Name", "Platform", "Username", "Follower_Count"]
-        
-        if os.path.exists(output_path):
+        # 1. Run HTTP platforms scrape concurrently (if applicable)
+        run_http = target_platform is None or target_platform.lower() in ("x", "instagram", "facebook")
+        http_truly_failed = []  # Channels with no backup and failed scrape
+        if run_http:
+            print("\nRunning X, Instagram, and Facebook scrapers concurrently...")
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                futures = {executor.submit(scrape_idol_http_channels, idol, today_backups, target_platform): idol for idol in active_idols}
+                for future in as_completed(futures):
+                    idol_name, local_res, alerts, truly_failed_channels = future.result()
+                    all_alerts.extend(alerts)
+                    http_truly_failed.extend(truly_failed_channels)
+                    for res in local_res:
+                        results.append((today_str, now_time_str, idol_name, res[0], res[1], res[2]))
+                    
+        # 2. Run TikTok sequentially (using Playwright)
+        run_tiktok = (target_platform is None or target_platform.lower() == "tiktok") and any(idol.get("tiktok_handle") for idol in active_idols)
+        if run_tiktok:
+            print("\nStarting Playwright for TikTok profiles scraping...")
+            browser_instance = None
+            playwright_context = None
             try:
-                with open(output_path, 'r', encoding='utf-8') as f:
-                    lines = f.readlines()
-                    if lines:
-                        headers = [h.strip() for h in lines[0].split(',')]
-                        if "Timestamp" not in headers:
-                            headers.insert(1, "Timestamp")
-                        
-                        for line in lines[1:]:
-                            parts = line.strip().split(',')
-                            if len(parts) == 5:
-                                parts.insert(1, "")
-                            if len(parts) == 6:
-                                existing_rows.append(parts)
-            except Exception as e:
-                print(f"Error reading existing CSV: {e}")
+                from playwright.sync_api import sync_playwright
+                playwright_context = sync_playwright().start()
+                browser_instance = playwright_context.chromium.launch(headless=True)
                 
-        keys_to_update = {(r[0], r[2], r[3]) for r in results}
-        updated_rows = [row for row in existing_rows if (row[0], row[2], row[3]) not in keys_to_update]
-        
-        for r in results:
-            updated_rows.append([r[0], r[1], r[2], r[3], r[4], str(r[5])])
-            
-        updated_rows.sort(key=lambda x: (x[0], x[2], x[3]))
-        
-        try:
-            with open(output_path, 'w', encoding='utf-8') as f:
-                f.write(','.join(headers) + '\n')
-                for row in updated_rows:
-                    f.write(','.join(row) + '\n')
-            print(f"\nSuccessfully updated follower history CSV. Total records: {len(updated_rows)}")
-        except Exception as e:
-            print(f"Error writing CSV: {e}")
-        
-    try:
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(idols, f, indent=2)
-        print(f"Successfully saved idols config updates inside '{config_path}'")
-    except Exception as e:
-        print(f"Error saving idols configuration: {e}")
-
-    failed_channels = []
-    # Compile truly failed channels (no backup, no data written)
-    # Channels that used backup counts are NOT failures - they have valid data in DB
-    try:
-        # HTTP platforms: use the truly_failed list from scrape_idol_http_channels
-        failed_channels.extend(http_truly_failed)
-
-        # TikTok: channels that failed AND had no backup
-        for alert in all_alerts:
-            if "Playwright initialization error" in alert:
-                # Entire TikTok runner crashed - find which channels have no DB record
                 for idol in active_idols:
                     name = idol.get("name")
                     tiktok_handle = idol.get("tiktok_handle")
-                    if tiktok_handle and (target_platform is None or target_platform.lower() == "tiktok"):
-                        if today_backups.get((name, "TikTok")) is None:
-                            failed_channels.append((name, "TikTok"))
-            elif "TikTok Scrape Error for" in alert:
-                # Individual TikTok failure with no backup
-                name_part = alert.split("TikTok Scrape Error for ")[1].split(" (")[0].strip()
-                if today_backups.get((name_part, "TikTok")) is None:
-                    failed_channels.append((name_part, "TikTok"))
-
-        # Remove duplicates
-        failed_channels = sorted(list(set(failed_channels)))
-        if failed_channels:
-            print(f"True failures (no backup): {len(failed_channels)} channels")
-        else:
-            print("All channels either scraped successfully or used today's backup. No true failures.")
-    except Exception as le:
-        print(f"Error compiling failed channels: {le}")
-
-    # Write failed channels to dynamic file based on platform, otherwise clear/delete the file
-    failed_scrapes_path = f"failed_scrapes_{target_platform.lower()}.json" if target_platform else "failed_scrapes.json"
-    if failed_channels:
-        try:
-            with open(failed_scrapes_path, "w", encoding="utf-8") as f:
-                json.dump(failed_channels, f, indent=2)
-            print(f"Logged {len(failed_channels)} failed channels to '{failed_scrapes_path}' for retry.")
-        except Exception as e:
-            print(f"Error logging failed channels: {e}")
-    else:
-        if os.path.exists(failed_scrapes_path):
-            try:
-                os.remove(failed_scrapes_path)
-                print(f"No failed channels. Cleared '{failed_scrapes_path}'.")
+                    if tiktok_handle:
+                        backup_val = today_backups.get((name, "TikTok"))
+                        print(f"  TikTok ({tiktok_handle})...")
+                        try:
+                            followers = scrape_tiktok(tiktok_handle, browser=browser_instance)
+                            if followers == 0 and backup_val is not None:
+                                print(f"Scraped 0 for {name} (TikTok), using backup: {backup_val}")
+                                followers = backup_val
+                            results.append((today_str, now_time_str, name, "TikTok", tiktok_handle, followers))
+                        except Exception as e:
+                            err_msg = str(e)
+                            all_alerts.append(f"TikTok Scrape Error for {name} ({tiktok_handle}): {err_msg}")
+                            if backup_val is not None:
+                                print(f"Scrape failed for {name} (TikTok), using backup count: {backup_val}")
+                                results.append((today_str, now_time_str, name, "TikTok", tiktok_handle, backup_val))
+                            else:
+                                if "429" in err_msg or "blocked" in err_msg.lower():
+                                    all_alerts.append(f"::warning:: Blocked by TikTok while scraping {name} ({tiktok_handle})")
             except Exception as e:
-                print(f"Error removing failed scrapes file: {e}")
+                all_alerts.append(f"Playwright initialization error: {e}")
+            finally:
+                if browser_instance:
+                    browser_instance.close()
+                if playwright_context:
+                    playwright_context.stop()
+                    
+        if all_alerts:
+            print("\n=== Scraping Alerts & Errors ===")
+            for alert in all_alerts:
+                print(alert)
+            with open("alerts.log", "w", encoding="utf-8") as af:
+                af.write("\n".join(all_alerts) + "\n")
+                
+        if results:
+            if postgres_url:
+                try:
+                    save_results_to_postgres(results, postgres_url)
+                    db_sync_status = "Success"
+                except Exception as e:
+                    print(f"Error saving stats to PostgreSQL: {e}")
+                    db_sync_status = f"Failed ({e})"
+                    db_sync_error = e
+            else:
+                # Fallback to local CSV
+                existing_rows = []
+                headers = ["Date", "Timestamp", "Idol_Name", "Platform", "Username", "Follower_Count"]
+                
+                if os.path.exists(output_path):
+                    try:
+                        with open(output_path, 'r', encoding='utf-8') as f:
+                            lines = f.readlines()
+                            if lines:
+                                headers = [h.strip() for h in lines[0].split(',')]
+                                if "Timestamp" not in headers:
+                                    headers.insert(1, "Timestamp")
+                                
+                                for line in lines[1:]:
+                                    parts = line.strip().split(',')
+                                    if len(parts) == 5:
+                                        parts.insert(1, "")
+                                    if len(parts) == 6:
+                                        existing_rows.append(parts)
+                    except Exception as e:
+                        print(f"Error reading existing CSV: {e}")
+                        
+                keys_to_update = {(r[0], r[2], r[3]) for r in results}
+                updated_rows = [row for row in existing_rows if (row[0], row[2], row[3]) not in keys_to_update]
+                
+                for r in results:
+                    updated_rows.append([r[0], r[1], r[2], r[3], r[4], str(r[5])])
+                    
+                updated_rows.sort(key=lambda x: (x[0], x[2], x[3]))
+                
+                try:
+                    with open(output_path, 'w', encoding='utf-8') as f:
+                        f.write(','.join(headers) + '\n')
+                        for row in updated_rows:
+                            f.write(','.join(row) + '\n')
+                    print(f"\nSuccessfully updated follower history CSV. Total records: {len(updated_rows)}")
+                except Exception as e:
+                    print(f"Error writing CSV: {e}")
+                
+            try:
+                with open(config_path, 'w', encoding='utf-8') as f:
+                    json.dump(idols, f, indent=2)
+                print(f"Successfully saved idols config updates inside '{config_path}'")
+            except Exception as e:
+                print(f"Error saving idols configuration: {e}")
 
-    if db_sync_error:
-        raise db_sync_error
+        failed_channels = []
+        try:
+            # HTTP platforms: use the truly_failed list from scrape_idol_http_channels
+            if run_http:
+                failed_channels.extend(http_truly_failed)
 
-    if failed_channels:
-        raise ValueError(f"Scrape completed with {len(failed_channels)} failed channels.")
+            # TikTok: channels that failed AND had no backup
+            if run_tiktok:
+                for alert in all_alerts:
+                    if "Playwright initialization error" in alert:
+                        for idol in active_idols:
+                            name = idol.get("name")
+                            tiktok_handle = idol.get("tiktok_handle")
+                            if tiktok_handle and (target_platform is None or target_platform.lower() == "tiktok"):
+                                if today_backups.get((name, "TikTok")) is None:
+                                    failed_channels.append((name, "TikTok"))
+                    elif "TikTok Scrape Error for" in alert:
+                        name_part = alert.split("TikTok Scrape Error for ")[1].split(" (")[0].strip()
+                        if today_backups.get((name_part, "TikTok")) is None:
+                            failed_channels.append((name_part, "TikTok"))
+
+            # Remove duplicates
+            failed_channels = sorted(list(set(failed_channels)))
+        except Exception as le:
+            print(f"Error compiling failed channels: {le}")
+
+        # If there are no failed channels, we are done!
+        if not failed_channels:
+            print("\nAll channels successfully scraped or backed up. No true failures remain.")
+            # Clear failed scrapes file since all succeeded
+            failed_scrapes_path = f"failed_scrapes_{target_platform.lower()}.json" if target_platform else "failed_scrapes.json"
+            if os.path.exists(failed_scrapes_path):
+                try:
+                    os.remove(failed_scrapes_path)
+                    print(f"No failed channels. Cleared '{failed_scrapes_path}'.")
+                except Exception as e:
+                    print(f"Error removing failed scrapes file: {e}")
+            break
+
+        # Check total elapsed time
+        elapsed = time.time() - start_time
+        if elapsed >= 900:  # 15 minutes limit
+            print(f"\nExecution reached {elapsed:.1f}s (>= 15 minutes limit). Terminating scraper run.")
+            # Write remaining failed channels to JSON for tracking
+            failed_scrapes_path = f"failed_scrapes_{target_platform.lower()}.json" if target_platform else "failed_scrapes.json"
+            try:
+                with open(failed_scrapes_path, "w", encoding="utf-8") as f:
+                    json.dump(failed_channels, f, indent=2)
+                print(f"Logged {len(failed_channels)} remaining failed channels to '{failed_scrapes_path}'.")
+            except Exception as e:
+                print(f"Error logging failed channels: {e}")
+                
+            if db_sync_error:
+                raise db_sync_error
+            raise ValueError(f"Scrape completed with {len(failed_channels)} remaining failed channels after 15m timeout.")
+
+        # Determine if we can wait 2 minutes
+        remaining = 900 - elapsed
+        if remaining <= 120:
+            print(f"\nOnly {remaining:.1f}s remaining before 15m timeout (less than 2 minutes retry interval). Terminating.")
+            failed_scrapes_path = f"failed_scrapes_{target_platform.lower()}.json" if target_platform else "failed_scrapes.json"
+            try:
+                with open(failed_scrapes_path, "w", encoding="utf-8") as f:
+                    json.dump(failed_channels, f, indent=2)
+            except Exception:
+                pass
+            if db_sync_error:
+                raise db_sync_error
+            raise ValueError(f"Scrape completed with {len(failed_channels)} remaining failed channels before 15m timeout.")
+
+        print(f"\nFailed to scrape {len(failed_channels)} channels. Waiting 2 minutes to retry...")
+        time.sleep(120)
+
+        # Filter original active idols list down to only failed channels
+        failed_map = {}
+        for name, platform in failed_channels:
+            failed_map.setdefault(name.lower(), set()).add(platform.lower())
+            
+        retry_idols = []
+        for idol in original_active_idols:
+            name_lower = idol.get("name", "").lower()
+            if name_lower in failed_map:
+                idol_copy = dict(idol)
+                platforms = failed_map[name_lower]
+                if "instagram" not in platforms: idol_copy["instagram_handle"] = None
+                if "x" not in platforms: idol_copy["x_handle"] = None
+                if "facebook" not in platforms: idol_copy["facebook_page"] = None
+                if "tiktok" not in platforms: idol_copy["tiktok_handle"] = None
+                retry_idols.append(idol_copy)
+        active_idols = retry_idols
+        attempt += 1
 
 def send_consolidated_alert(phase: str, config_path: str = "idols.json"):
     TZ_BKK = timezone(timedelta(hours=7))
