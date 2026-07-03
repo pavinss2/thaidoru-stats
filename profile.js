@@ -546,12 +546,7 @@ function renderProfileChart() {
                         
                         const dataVal = dataset.data[index];
                         if (dataVal !== null && dataVal !== undefined) {
-                            let formattedVal = dataVal;
-                            if (dataVal >= 1e6) {
-                                formattedVal = parseFloat((dataVal / 1e6).toFixed(2)) + 'M';
-                            } else if (dataVal >= 1e3) {
-                                formattedVal = parseFloat((dataVal / 1e3).toFixed(2)) + 'k';
-                            }
+                            let formattedVal = new Intl.NumberFormat().format(dataVal);
                             ctx.fillStyle = dataset.borderColor || '#E1E1E6';
                             ctx.fillText(formattedVal, point.x, point.y - 8);
                         }
