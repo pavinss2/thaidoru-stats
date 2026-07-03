@@ -3,7 +3,7 @@ name: Weekly Idol Avatar Monitor
 on:
   schedule:
     - cron: '0 0 * * 0' # Every Sunday at 00:00 UTC
-  # workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
 permissions:
   contents: write
