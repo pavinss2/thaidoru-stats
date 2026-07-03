@@ -43,7 +43,7 @@ def scrape_instagram_socialblade(username: str) -> int:
     """
     Scrapes Instagram followers from SocialBlade using __NEXT_DATA__ parsing.
     """
-    clean_name = username.lstrip('@')
+    clean_name = username.lstrip('@').lower()
     url = f"https://socialblade.com/instagram/user/{clean_name}"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -149,7 +149,7 @@ def scrape_facebook_socialblade(page_name: str) -> int:
     """
     Scrapes Facebook likes from SocialBlade using __NEXT_DATA__ parsing.
     """
-    clean_name = page_name.lstrip('@')
+    clean_name = page_name.lstrip('@').lower()
     url = f"https://socialblade.com/facebook/user/{clean_name}"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
