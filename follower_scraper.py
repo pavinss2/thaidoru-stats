@@ -5,7 +5,7 @@ import csv
 import argparse
 import time
 import random
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from bs4 import BeautifulSoup
@@ -577,8 +577,10 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
     if target_platform:
         print(f"Limiting scraping to platform: {target_platform}")
         
-    today_str = datetime.today().strftime('%Y-%m-%d')
-    now_time_str = datetime.today().strftime('%H:%M:%S')
+    TZ_BKK = timezone(timedelta(hours=7))
+    now_bkk = datetime.now(TZ_BKK)
+    today_str = now_bkk.strftime('%Y-%m-%d')
+    now_time_str = now_bkk.strftime('%H:%M:%S')
     results = []
     all_alerts = []
     
@@ -777,7 +779,8 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
         raise ValueError(f"Scrape completed with {len(failed_channels)} failed channels.")
 
 def send_consolidated_alert(phase: str, config_path: str = "idols.json"):
-    today_str = datetime.today().strftime('%Y-%m-%d')
+    TZ_BKK = timezone(timedelta(hours=7))
+    today_str = datetime.now(TZ_BKK).strftime('%Y-%m-%d')
     
     if not os.path.exists(config_path):
         print(f"Error: Config '{config_path}' not found for alert.")

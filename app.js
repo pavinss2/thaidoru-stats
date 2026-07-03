@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
         idolsList = idols;
         historyData = parsedData;
         
-        // Display the latest scrape update timestamp
+        // Display the latest scrape update timestamp (stored in UTC+7 by scraper)
         if (historyData.length > 0) {
             const sortedHistory = [...historyData].sort((a, b) => {
                 const dateComp = a.Date.localeCompare(b.Date);
@@ -93,23 +93,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 return (a.Timestamp || "").localeCompare(b.Timestamp || "");
             });
             const latest = sortedHistory[sortedHistory.length - 1];
-            let displayDate = latest.Date;
-            let timeStr = "";
-            if (latest.Timestamp) {
-                // Timestamp is stored as UTC HH:MM:SS — convert to UTC+7
-                // new Date() + setHours handles date rollover automatically
-                const utcDate = new Date(`${latest.Date}T${latest.Timestamp}Z`);
-                utcDate.setHours(utcDate.getHours() + 7);
-                const h7 = String(utcDate.getHours()).padStart(2, "0");
-                const m7 = String(utcDate.getMinutes()).padStart(2, "0");
-                // Use the UTC+7-adjusted date (handles midnight rollover)
-                const yyyy = utcDate.getFullYear();
-                const mm   = String(utcDate.getMonth() + 1).padStart(2, "0");
-                const dd   = String(utcDate.getDate()).padStart(2, "0");
-                displayDate = `${yyyy}-${mm}-${dd}`;
-                timeStr = ` @ ${h7}:${m7} (UTC+7)`;
-            }
-            document.getElementById("last-updated").innerText = `Last Update: ${displayDate}${timeStr}`;
+            const timeStr = latest.Timestamp ? ` @ ${latest.Timestamp.slice(0, 5)} (UTC+7)` : "";
+            document.getElementById("last-updated").innerText = `Last Update: ${latest.Date}${timeStr}`;
         }
         
         // Initial setup and render
