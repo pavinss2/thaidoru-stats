@@ -237,10 +237,13 @@ def scrape_idol_http_channels(idol, today_backups, target_platform=None):
     """
     Scrapes X, Instagram, and Facebook metrics concurrently.
     Includes failure fallback logic from today_backups.
+    Returns: (name, results, alerts, truly_failed)
+    truly_failed contains (name, platform) pairs where scraping failed AND no backup existed.
     """
     name = idol.get("name")
     results = []
     alerts = []
+    truly_failed = []  # Only channels with NO backup and failed scrape
     
     # 1. Instagram
     ig = idol.get("instagram_handle")
@@ -256,9 +259,12 @@ def scrape_idol_http_channels(idol, today_backups, target_platform=None):
             err_msg = str(e)
             alerts.append(f"Instagram Scrape Error for {name} ({ig}): {err_msg}")
             if backup_val is not None:
+                # Graceful degradation: backup used, NOT a true failure
                 print(f"Scrape failed for {name} (Instagram), using backup count: {backup_val}")
                 results.append(("Instagram", ig, backup_val))
             else:
+                # True failure: no backup available, needs retry
+                truly_failed.append((name, "Instagram"))
                 if "429" in err_msg or "blocked" in err_msg.lower():
                     alerts.append(f"::warning:: Blocked by Instagram while scraping {name} ({ig})")
                 
@@ -281,6 +287,7 @@ def scrape_idol_http_channels(idol, today_backups, target_platform=None):
                 print(f"Scrape failed for {name} (X), using backup count: {backup_val}")
                 results.append(("X", x, backup_val))
             else:
+                truly_failed.append((name, "X"))
                 if "429" in err_msg or "blocked" in err_msg.lower():
                     alerts.append(f"::warning:: Blocked by X while scraping {name} ({x})")
                 if "404" in err_msg or "suspended" in err_msg.lower():
@@ -303,10 +310,11 @@ def scrape_idol_http_channels(idol, today_backups, target_platform=None):
                 print(f"Scrape failed for {name} (Facebook), using backup count: {backup_val}")
                 results.append(("Facebook", fb, backup_val))
             else:
+                truly_failed.append((name, "Facebook"))
                 if "429" in err_msg or "blocked" in err_msg.lower():
                     alerts.append(f"::warning:: Blocked by Facebook while scraping {name} ({fb})")
                 
-    return name, results, alerts
+    return name, results, alerts, truly_failed
 
 # ========================================================
 # Backup Retrieval Pipelines (Database & CSV)
@@ -595,13 +603,15 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
         
     # 1. Run HTTP platforms scrape concurrently (if applicable)
     run_http = target_platform is None or target_platform.lower() in ("x", "instagram", "facebook")
+    http_truly_failed = []  # Channels with no backup and failed scrape
     if run_http:
         print("\nRunning X, Instagram, and Facebook scrapers concurrently...")
         with ThreadPoolExecutor(max_workers=10) as executor:
             futures = {executor.submit(scrape_idol_http_channels, idol, today_backups, target_platform): idol for idol in active_idols}
             for future in as_completed(futures):
-                idol_name, local_res, alerts = future.result()
+                idol_name, local_res, alerts, truly_failed_channels = future.result()
                 all_alerts.extend(alerts)
+                http_truly_failed.extend(truly_failed_channels)
                 for res in local_res:
                     results.append((today_str, now_time_str, idol_name, res[0], res[1], res[2]))
                 
@@ -712,37 +722,34 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
         print(f"Error saving idols configuration: {e}")
 
     failed_channels = []
-    # Calculate stats and compile failed channels
+    # Compile truly failed channels (no backup, no data written)
+    # Channels that used backup counts are NOT failures - they have valid data in DB
     try:
-        expected_channels = []
-        for idol in active_idols:
-            name = idol.get("name")
-            if target_platform:
-                if target_platform.lower() == "x" and idol.get("x_handle"): expected_channels.append((name, "X"))
-                elif target_platform.lower() == "instagram" and idol.get("instagram_handle"): expected_channels.append((name, "Instagram"))
-                elif target_platform.lower() == "facebook" and idol.get("facebook_page"): expected_channels.append((name, "Facebook"))
-                elif target_platform.lower() == "tiktok" and idol.get("tiktok_handle"): expected_channels.append((name, "TikTok"))
-            else:
-                if idol.get("x_handle"): expected_channels.append((name, "X"))
-                if idol.get("instagram_handle"): expected_channels.append((name, "Instagram"))
-                if idol.get("facebook_page"): expected_channels.append((name, "Facebook"))
-                if idol.get("tiktok_handle"): expected_channels.append((name, "TikTok"))
+        # HTTP platforms: use the truly_failed list from scrape_idol_http_channels
+        failed_channels.extend(http_truly_failed)
 
-        # Track failures by scanning alerts log
+        # TikTok: channels that failed AND had no backup
         for alert in all_alerts:
-            if "Scrape Error for" in alert:
-                parts = alert.split(" Scrape Error for ")
-                if len(parts) == 2:
-                    platform = parts[0].strip()
-                    name_part = parts[1].split(" (")[0].strip()
-                    failed_channels.append((name_part, platform))
-            elif "Playwright initialization error" in alert:
-                for name, platform in expected_channels:
-                    if platform == "TikTok":
-                        failed_channels.append((name, "TikTok"))
+            if "Playwright initialization error" in alert:
+                # Entire TikTok runner crashed - find which channels have no DB record
+                for idol in active_idols:
+                    name = idol.get("name")
+                    tiktok_handle = idol.get("tiktok_handle")
+                    if tiktok_handle and (target_platform is None or target_platform.lower() == "tiktok"):
+                        if today_backups.get((name, "TikTok")) is None:
+                            failed_channels.append((name, "TikTok"))
+            elif "TikTok Scrape Error for" in alert:
+                # Individual TikTok failure with no backup
+                name_part = alert.split("TikTok Scrape Error for ")[1].split(" (")[0].strip()
+                if today_backups.get((name_part, "TikTok")) is None:
+                    failed_channels.append((name_part, "TikTok"))
 
-        # Remove duplicates from failed_channels
+        # Remove duplicates
         failed_channels = sorted(list(set(failed_channels)))
+        if failed_channels:
+            print(f"True failures (no backup): {len(failed_channels)} channels")
+        else:
+            print("All channels either scraped successfully or used today's backup. No true failures.")
     except Exception as le:
         print(f"Error compiling failed channels: {le}")
 
