@@ -626,8 +626,8 @@ function renderProfileChart() {
                         color: '#8E8E9F',
                         font: { family: 'Outfit', size: 11 },
                         callback: function(value) {
-                            if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
-                            if (value >= 1e3) return (value / 1e3).toFixed(0) + 'k';
+                            if (value >= 1e6) return (value / 1e6).toFixed(2) + 'M';
+                            if (value >= 1e3) return (value / 1e3).toFixed(2) + 'k';
                             return value;
                         }
                     }
