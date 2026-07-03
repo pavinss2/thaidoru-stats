@@ -93,7 +93,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 return (a.Timestamp || "").localeCompare(b.Timestamp || "");
             });
             const latest = sortedHistory[sortedHistory.length - 1];
-            const timeStr = latest.Timestamp ? ` @ ${latest.Timestamp}` : "";
+            let timeStr = "";
+            if (latest.Timestamp) {
+                // Timestamp is stored as UTC HH:MM:SS — convert to UTC+7
+                const [hh, mm, ss] = latest.Timestamp.split(":").map(Number);
+                const utcDate = new Date(`${latest.Date}T${latest.Timestamp}Z`);
+                utcDate.setHours(utcDate.getHours() + 7);
+                const h7 = String(utcDate.getHours()).padStart(2, "0");
+                const m7 = String(utcDate.getMinutes()).padStart(2, "0");
+                timeStr = ` @ ${h7}:${m7} (UTC+7)`;
+            }
             document.getElementById("last-updated").innerText = `Last Update: ${latest.Date}${timeStr}`;
         }
         
