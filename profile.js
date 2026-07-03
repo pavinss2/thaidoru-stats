@@ -625,8 +625,12 @@ function renderProfileChart() {
                     ticks: {
                         color: '#8E8E9F',
                         font: { family: 'Outfit', size: 11 },
+                        precision: 0,
                         callback: function(value) {
-                            return new Intl.NumberFormat().format(value);
+                            if (value % 1 === 0) {
+                                return new Intl.NumberFormat().format(value);
+                            }
+                            return null;
                         }
                     }
                 }
