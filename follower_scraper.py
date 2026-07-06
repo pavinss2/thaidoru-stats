@@ -84,32 +84,44 @@ def scrape_instagram(handle: str) -> int:
         print(f"SocialBlade Instagram scraper failed for {handle}: {e}. Trying Instastatistics next.")
 
     # 2. Attempt instastatistics.com next (for exact counts)
-    try:
-        url_is = f"https://instastatistics.com/{handle}"
-        time.sleep(random.uniform(0.5, 1.5))
-        
-        headers_is = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-        }
-        
-        response = requests.get(url_is, headers=headers_is, timeout=10)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, 'html.parser')
-            desc_tag = soup.find('meta', attrs={'name': 'description'}) or soup.find('meta', attrs={'property': 'og:description'})
-            content = desc_tag.get('content', '') if desc_tag else ''
+    for attempt in range(2):
+        try:
+            url_is = f"https://instastatistics.com/{handle}"
+            time.sleep(random.uniform(0.5, 1.5))
             
-            match = re.search(r'has\s+([\d,\.]+)\s+Instagram\s+followers', content, re.IGNORECASE)
-            if match:
-                return clean_count_str(match.group(1))
+            headers_is = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+            }
+            
+            response = requests.get(url_is, headers=headers_is, timeout=10)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                desc_tag = soup.find('meta', attrs={'name': 'description'}) or soup.find('meta', attrs={'property': 'og:description'})
+                content = desc_tag.get('content', '') if desc_tag else ''
                 
-            # Backup raw text search on HTML
-            match_raw = re.search(r'has\s+([\d,\.]+)\s+Instagram\s+followers', response.text, re.IGNORECASE)
-            if match_raw:
-                return clean_count_str(match_raw.group(1))
-    except Exception as e:
-        print(f"Instastatistics exact count fetch failed for {handle}: {e}. Falling back to direct Instagram scrape.")
+                match = re.search(r'has\s+([\d,\.]+)\s+Instagram\s+followers', content, re.IGNORECASE)
+                if match:
+                    return clean_count_str(match.group(1))
+                    
+                # Backup raw text search on HTML
+                match_raw = re.search(r'has\s+([\d,\.]+)\s+Instagram\s+followers', response.text, re.IGNORECASE)
+                if match_raw:
+                    return clean_count_str(match_raw.group(1))
+                
+                # If we got here, it means we hit a 200 but it was the uncached placeholder page.
+                # The first request has triggered Instastatistics to cache the user in the background.
+                # We wait 4 seconds and try one more time.
+                if attempt == 0:
+                    print(f"Instastatistics returned placeholder for {handle}. Waiting 4 seconds for cache generation...")
+                    time.sleep(4)
+                    continue
+        except Exception as e:
+            print(f"Instastatistics exact count fetch failed for {handle} (attempt {attempt + 1}): {e}")
+            if attempt == 0:
+                time.sleep(2)
+                continue
         
     # 2. Fallback to direct Instagram scraping (may return truncated count e.g. 65K)
     url = f"https://www.instagram.com/{handle}/"
