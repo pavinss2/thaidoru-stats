@@ -1,8 +1,8 @@
-name: Weekly Idol Avatar Monitor
+name: Daily Idol Avatar Monitor
 
 on:
   schedule:
-    - cron: '0 0 * * 0' # Every Sunday at 00:00 UTC
+    - cron: '30 18 * * *' # Every day at 01:30 Bangkok time (18:30 UTC)
   workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
 permissions:

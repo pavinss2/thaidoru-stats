@@ -2,7 +2,7 @@ name: Daily Idol Follower Scraper & Avatar Monitor
 
 on:
   schedule:
-    - cron: '2 18 * * *' # Every day at midnight Bangkok time (17:00 UTC)
+    - cron: '10 7,19 * * *' # Every day at 02:10 and 14:10 Bangkok time (19:10 and 07:10 UTC)
   workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
 permissions:
