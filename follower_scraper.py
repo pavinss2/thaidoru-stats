@@ -70,62 +70,11 @@ def scrape_instagram_socialblade(username: str) -> int:
                         
     raise ValueError(f"SocialBlade returned status {response.status_code} or followers not found in __NEXT_DATA__")
 
-def scrape_instagram(handle: str) -> int:
+def scrape_instagram_direct(handle: str) -> int:
     """
-    Scrapes the public follower count of an Instagram profile.
-    First attempts to query SocialBlade, then falls back to instastatistics.com,
-    and finally crawls the direct Instagram profile if those fail.
+    Crawls direct Instagram profile.
     """
-    # 1. Attempt SocialBlade first (exact count check)
-    try:
-        print(f"Attempting SocialBlade first for Instagram handle: {handle}")
-        return scrape_instagram_socialblade(handle)
-    except Exception as e:
-        print(f"SocialBlade Instagram scraper failed for {handle}: {e}. Trying Instastatistics next.")
-
-    # 2. Attempt instastatistics.com next (for exact counts)
-    for attempt in range(2):
-        try:
-            url_is = f"https://instastatistics.com/{handle}"
-            time.sleep(random.uniform(0.5, 1.5))
-            
-            headers_is = {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9',
-            }
-            
-            response = requests.get(url_is, headers=headers_is, timeout=10)
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
-                desc_tag = soup.find('meta', attrs={'name': 'description'}) or soup.find('meta', attrs={'property': 'og:description'})
-                content = desc_tag.get('content', '') if desc_tag else ''
-                
-                match = re.search(r'has\s+([\d,\.]+)\s+Instagram\s+followers', content, re.IGNORECASE)
-                if match:
-                    return clean_count_str(match.group(1))
-                    
-                # Backup raw text search on HTML
-                match_raw = re.search(r'has\s+([\d,\.]+)\s+Instagram\s+followers', response.text, re.IGNORECASE)
-                if match_raw:
-                    return clean_count_str(match_raw.group(1))
-                
-                # If we got here, it means we hit a 200 but it was the uncached placeholder page.
-                # The first request has triggered Instastatistics to cache the user in the background.
-                # We wait 4 seconds and try one more time.
-                if attempt == 0:
-                    print(f"Instastatistics returned placeholder for {handle}. Waiting 4 seconds for cache generation...")
-                    time.sleep(4)
-                    continue
-        except Exception as e:
-            print(f"Instastatistics exact count fetch failed for {handle} (attempt {attempt + 1}): {e}")
-            if attempt == 0:
-                time.sleep(2)
-                continue
-        
-    # 2. Fallback to direct Instagram scraping (may return truncated count e.g. 65K)
     url = f"https://www.instagram.com/{handle}/"
-    
     # Introduce staggered start to spread concurrent requests
     time.sleep(random.uniform(0.5, 2.5))
     
@@ -156,6 +105,134 @@ def scrape_instagram(handle: str) -> int:
             time.sleep(2)
             
     raise ValueError("Instagram rate limit active (returned sign-in page) after 3 attempts")
+
+def scrape_instagram_instastatistics_http(handle: str) -> int:
+    """
+    Attempts to scrape instastatistics.com using HTTP requests.
+    """
+    for attempt in range(2):
+        try:
+            url_is = f"https://instastatistics.com/{handle}"
+            time.sleep(random.uniform(0.5, 1.5))
+            
+            headers_is = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+            }
+            
+            response = requests.get(url_is, headers=headers_is, timeout=10)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                desc_tag = soup.find('meta', attrs={'name': 'description'}) or soup.find('meta', attrs={'property': 'og:description'})
+                content = desc_tag.get('content', '') if desc_tag else ''
+                
+                match = re.search(r'has\s+([\d,\.]+)\s+Instagram\s+followers', content, re.IGNORECASE)
+                if match:
+                    return clean_count_str(match.group(1))
+                    
+                # Backup raw text search on HTML
+                match_raw = re.search(r'has\s+([\d,\.]+)\s+Instagram\s+followers', response.text, re.IGNORECASE)
+                if match_raw:
+                    return clean_count_str(match_raw.group(1))
+                
+                if attempt == 0:
+                    print(f"Instastatistics returned placeholder for {handle}. Waiting 4 seconds for cache generation...")
+                    time.sleep(4)
+                    continue
+        except Exception as e:
+            if attempt == 1:
+                raise e
+            time.sleep(2)
+            
+    raise ValueError("Instastatistics exact count not found in description meta")
+
+def scrape_instagram_instastatistics_playwright(handle: str, browser=None) -> int:
+    """
+    Scrapes the exact follower count from instastatistics.com using Playwright
+    by capturing the JSON API response from their background network queries.
+    """
+    from playwright.sync_api import sync_playwright
+    url = f"https://instastatistics.com/{handle}"
+    
+    local_browser = False
+    playwright_context = None
+    if browser is None:
+        playwright_context = sync_playwright().start()
+        browser = playwright_context.chromium.launch(headless=True)
+        local_browser = True
+        
+    try:
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            viewport={"width": 1280, "height": 800}
+        )
+        page = context.new_page()
+        
+        followers_count = None
+        
+        # Define a response handler to capture JSON
+        def handle_response(response):
+            nonlocal followers_count
+            if "api/user" in response.url:
+                try:
+                    data = response.json()
+                    if data and isinstance(data, dict):
+                        f_count = data.get("followers")
+                        if f_count is not None:
+                            followers_count = int(f_count)
+                except Exception:
+                    pass
+                    
+        page.on("response", handle_response)
+        
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=20000)
+            # Wait up to 6 seconds to capture the background api polling
+            for _ in range(12):
+                if followers_count is not None:
+                    break
+                page.wait_for_timeout(500)
+        finally:
+            context.close()
+            
+        if followers_count is not None:
+            return followers_count
+        raise ValueError(f"Followers count not captured from Instastatistics api/user for {handle}")
+    finally:
+        if local_browser:
+            browser.close()
+            playwright_context.stop()
+
+def scrape_instagram(handle: str) -> int:
+    """
+    Scrapes the public follower count of an Instagram profile.
+    1. Direct Instagram Scrape (First)
+    2. SocialBlade (Second)
+    3. Instastatistics HTTP (Third)
+    """
+    # 1. Attempt Direct Instagram scrape first
+    try:
+        print(f"Attempting Direct Instagram scrape first for handle: {handle}")
+        return scrape_instagram_direct(handle)
+    except Exception as e:
+        print(f"Direct Instagram scrape failed for {handle}: {e}. Trying SocialBlade next.")
+
+    # 2. Attempt SocialBlade second (exact count check)
+    try:
+        print(f"Attempting SocialBlade second for Instagram handle: {handle}")
+        return scrape_instagram_socialblade(handle)
+    except Exception as e:
+        print(f"SocialBlade Instagram scraper failed for {handle}: {e}. Trying Instastatistics HTTP next.")
+
+    # 3. Attempt Instastatistics HTTP third
+    try:
+        print(f"Attempting Instastatistics HTTP for Instagram handle: {handle}")
+        return scrape_instagram_instastatistics_http(handle)
+    except Exception as e:
+        print(f"Instastatistics HTTP failed for {handle}: {e}.")
+
+    raise ValueError(f"All standard scraping layers failed for Instagram handle: {handle}")
 
 def scrape_facebook_socialblade(page_name: str) -> int:
     """
@@ -720,10 +797,13 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
                     for res in local_res:
                         results.append((today_str, now_time_str, idol_name, res[0], res[1], res[2]))
                     
-        # 2. Run TikTok sequentially (using Playwright)
+        # 2. Run Playwright fallback for failed Instagram channels & TikTok scraping
+        failed_ig_channels = [ch for ch in http_truly_failed if ch[1].lower() == "instagram"]
+        run_playwright_ig = len(failed_ig_channels) > 0
         run_tiktok = (target_platform is None or target_platform.lower() == "tiktok") and any(idol.get("tiktok_handle") for idol in active_idols)
-        if run_tiktok:
-            print("\nStarting Playwright for TikTok profiles scraping...")
+        
+        if run_playwright_ig or run_tiktok:
+            print("\nStarting Playwright browser session...")
             browser_instance = None
             playwright_context = None
             try:
@@ -731,27 +811,54 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
                 playwright_context = sync_playwright().start()
                 browser_instance = playwright_context.chromium.launch(headless=True)
                 
-                for idol in active_idols:
-                    name = idol.get("name")
-                    tiktok_handle = idol.get("tiktok_handle")
-                    if tiktok_handle:
-                        backup_val = today_backups.get((name, "TikTok"))
-                        print(f"  TikTok ({tiktok_handle})...")
-                        try:
-                            followers = scrape_tiktok(tiktok_handle, browser=browser_instance)
-                            if followers == 0 and backup_val is not None:
-                                print(f"Scraped 0 for {name} (TikTok), using backup: {backup_val}")
-                                followers = backup_val
-                            results.append((today_str, now_time_str, name, "TikTok", tiktok_handle, followers))
-                        except Exception as e:
-                            err_msg = str(e)
-                            all_alerts.append(f"TikTok Scrape Error for {name} ({tiktok_handle}): {err_msg}")
-                            if backup_val is not None:
-                                print(f"Scrape failed for {name} (TikTok), using backup count: {backup_val}")
-                                results.append((today_str, now_time_str, name, "TikTok", tiktok_handle, backup_val))
-                            else:
-                                if "429" in err_msg or "blocked" in err_msg.lower():
-                                    all_alerts.append(f"::warning:: Blocked by TikTok while scraping {name} ({tiktok_handle})")
+                # A. Playwright fallback for failed Instagram channels
+                if run_playwright_ig:
+                    print(f"Retrying {len(failed_ig_channels)} failed Instagram channels using Playwright...")
+                    for name, platform in failed_ig_channels:
+                        # Find the handle in active_idols
+                        idol_data = next((i for i in active_idols if i.get("name") == name), None)
+                        if idol_data:
+                            ig_handle = idol_data.get("instagram_handle")
+                            if ig_handle:
+                                print(f"  Instagram Playwright fallback for {name} ({ig_handle})...")
+                                try:
+                                    followers = scrape_instagram_instastatistics_playwright(ig_handle, browser=browser_instance)
+                                    print(f"    Successfully resolved via Playwright: {followers}")
+                                    
+                                    # Update results
+                                    results = [r for r in results if not (r[2] == name and r[3] == "Instagram")]
+                                    results.append((today_str, now_time_str, name, "Instagram", ig_handle, followers))
+                                    
+                                    # Remove from http_truly_failed
+                                    http_truly_failed = [ch for ch in http_truly_failed if not (ch[0] == name and ch[1].lower() == "instagram")]
+                                except Exception as e:
+                                    print(f"    Playwright fallback failed for {name} ({ig_handle}): {e}")
+                                    all_alerts.append(f"Instagram Playwright Fallback Error for {name} ({ig_handle}): {e}")
+                                    
+                # B. Scrape TikTok profiles
+                if run_tiktok:
+                    print("\nScraping TikTok profiles using Playwright...")
+                    for idol in active_idols:
+                        name = idol.get("name")
+                        tiktok_handle = idol.get("tiktok_handle")
+                        if tiktok_handle:
+                            backup_val = today_backups.get((name, "TikTok"))
+                            print(f"  TikTok ({tiktok_handle})...")
+                            try:
+                                followers = scrape_tiktok(tiktok_handle, browser=browser_instance)
+                                if followers == 0 and backup_val is not None:
+                                    print(f"Scraped 0 for {name} (TikTok), using backup: {backup_val}")
+                                    followers = backup_val
+                                results.append((today_str, now_time_str, name, "TikTok", tiktok_handle, followers))
+                            except Exception as e:
+                                err_msg = str(e)
+                                all_alerts.append(f"TikTok Scrape Error for {name} ({tiktok_handle}): {err_msg}")
+                                if backup_val is not None:
+                                    print(f"Scrape failed for {name} (TikTok), using backup count: {backup_val}")
+                                    results.append((today_str, now_time_str, name, "TikTok", tiktok_handle, backup_val))
+                                else:
+                                    if "429" in err_msg or "blocked" in err_msg.lower():
+                                        all_alerts.append(f"::warning:: Blocked by TikTok while scraping {name} ({tiktok_handle})")
             except Exception as e:
                 all_alerts.append(f"Playwright initialization error: {e}")
             finally:
