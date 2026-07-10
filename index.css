@@ -90,20 +90,20 @@ body {
 }
 
 .logo-box {
-    width: 50px;
-    height: 50px;
+    width: 36px;
+    height: 36px;
     background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
-    border-radius: 12px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 20px rgba(157, 77, 255, 0.4);
+    box-shadow: 0 0 12px rgba(157, 77, 255, 0.4);
 }
 
 .logo-box i {
     color: white;
-    width: 26px;
-    height: 26px;
+    width: 18px;
+    height: 18px;
 }
 
 .brand h1 {
@@ -1159,9 +1159,9 @@ a.platform-metric:hover {
     color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-color);
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     transition: var(--transition-smooth);
     flex-shrink: 0;
 }
@@ -1199,12 +1199,12 @@ a.platform-metric:hover {
    ========================================== */
 .top-nav-tabs {
     display: flex;
-    gap: 12px;
-    margin-bottom: 25px;
+    gap: 8px;
+    margin-bottom: 0;
     background: rgba(20, 20, 25, 0.4);
     border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 8px;
+    border-radius: 12px;
+    padding: 4px;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     overflow-x: auto;
@@ -1213,14 +1213,14 @@ a.platform-metric:hover {
 .nav-tab {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 10px;
-    padding: 10px 20px;
+    border-radius: 8px;
+    padding: 6px 12px;
     color: var(--text-secondary);
     font-family: var(--font-primary);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition-smooth);
@@ -1229,8 +1229,8 @@ a.platform-metric:hover {
 }
 
 .nav-tab i {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
 }
 
 .nav-tab:hover {
