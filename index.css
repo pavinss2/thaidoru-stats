@@ -1335,4 +1335,9 @@ a.platform-metric:hover {
     }
 }
 
+/* Color Tab member cards hide comparative checkbox circle */
+.member-card.no-toggle::after {
+    display: none !important;
+}
+
 

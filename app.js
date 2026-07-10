@@ -1408,6 +1408,43 @@ function populateTabFilters() {
     }
 }
 
+function getSnsLinksHtml(item) {
+    const igUrl = item.instagram_handle ? (item.instagram_handle.startsWith('http') ? item.instagram_handle : `https://www.instagram.com/${item.instagram_handle}/`) : '';
+    const xUrl = item.x_handle ? (item.x_handle.startsWith('http') ? item.x_handle : `https://x.com/${item.x_handle}`) : '';
+    const fbUrl = item.facebook_page ? (item.facebook_page.startsWith('http') ? item.facebook_page : `https://www.facebook.com/${item.facebook_page}`) : '';
+    const ttUrl = item.tiktok_handle ? (item.tiktok_handle.startsWith('http') ? item.tiktok_handle : `https://www.tiktok.com/@${item.tiktok_handle}`) : '';
+
+    let html = `<div style="display:flex; gap: 10px; align-items:center;">`;
+    
+    if (igUrl) {
+        html += `<a href="${igUrl}" target="_blank" onclick="event.stopPropagation();" style="color:var(--text-secondary); transition: var(--transition-smooth); display:flex; align-items:center;" onmouseenter="this.style.color='#FF85B3'" onmouseleave="this.style.color='var(--text-secondary)'" title="Instagram">
+            <svg aria-hidden="true" style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"></path></svg>
+        </a>`;
+    }
+    if (xUrl) {
+        html += `<a href="${xUrl}" target="_blank" onclick="event.stopPropagation();" style="color:var(--text-secondary); transition: var(--transition-smooth); display:flex; align-items:center;" onmouseenter="this.style.color='#FFFFFF'" onmouseleave="this.style.color='var(--text-secondary)'" title="X (Twitter)">
+            <svg aria-hidden="true" style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"></path></svg>
+        </a>`;
+    }
+    if (fbUrl) {
+        html += `<a href="${fbUrl}" target="_blank" onclick="event.stopPropagation();" style="color:var(--text-secondary); transition: var(--transition-smooth); display:flex; align-items:center;" onmouseenter="this.style.color='#5C9CFF'" onmouseleave="this.style.color='var(--text-secondary)'" title="Facebook">
+            <svg aria-hidden="true" style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"></path></svg>
+        </a>`;
+    }
+    if (ttUrl) {
+        html += `<a href="${ttUrl}" target="_blank" onclick="event.stopPropagation();" style="color:var(--text-secondary); transition: var(--transition-smooth); display:flex; align-items:center;" onmouseenter="this.style.color='#4DF2EE'" onmouseleave="this.style.color='var(--text-secondary)'" title="TikTok">
+            <svg aria-hidden="true" style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><path d="M448 209.91a210.06 210.06 0 0 1-122.77-39.25v178.72A162.55 162.55 0 1 1 185 188.31v89.89a72.69 72.69 0 1 0 72.23 72.42V0h90.87a208.87 208.87 0 0 0 41 93.9 208.56 208.56 0 0 0 58.9 51.6z"></path></svg>
+        </a>`;
+    }
+    
+    if (!igUrl && !xUrl && !fbUrl && !ttUrl) {
+        html += `<span style="font-size: 11px; color: var(--text-muted);">None</span>`;
+    }
+
+    html += `</div>`;
+    return html;
+}
+
 function renderAgencyTab() {
     const tbody = document.getElementById("agency-directory-body");
     if (!tbody) return;
@@ -1417,20 +1454,13 @@ function renderAgencyTab() {
     const filteredAgencies = agencies.filter(a => a.toLowerCase().includes(agencySearchQuery));
 
     if (filteredAgencies.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted); padding: 20px;">No agencies found matching "${agencySearchQuery}"</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color: var(--text-muted); padding: 20px;">No agencies found matching "${agencySearchQuery}"</td></tr>`;
         return;
     }
 
     filteredAgencies.forEach(agencyName => {
         const agencyGroups = idolsList.filter(i => i.type === "group" && i.agency === agencyName);
         const agencyMembers = idolsList.filter(i => i.type === "member" && i.agency === agencyName);
-
-        // Sum followers
-        let totalFollowers = 0;
-        [...agencyGroups, ...agencyMembers].forEach(item => {
-            const stats = getLatestStats(item.name);
-            totalFollowers += stats.Instagram + stats.X + stats.Facebook + stats.TikTok;
-        });
 
         const row = document.createElement("tr");
         row.style.cursor = "pointer";
@@ -1445,7 +1475,6 @@ function renderAgencyTab() {
             </td>
             <td>${agencyGroups.length} Groups</td>
             <td>${agencyMembers.length} Members</td>
-            <td style="font-weight: 700; color: var(--accent-blue);">${totalFollowers.toLocaleString()}</td>
         `;
 
         row.addEventListener("click", () => {
@@ -1478,8 +1507,6 @@ function renderGroupTab() {
     filteredGroups.sort((a, b) => a.name.localeCompare(b.name));
 
     filteredGroups.forEach(group => {
-        const stats = getLatestStats(group.name);
-        const totalFollowers = stats.Instagram + stats.X + stats.Facebook + stats.TikTok;
         const membersCount = idolsList.filter(i => i.type === "member" && i.group === group.name).length;
         const initials = group.name.slice(0, 2).toUpperCase();
         const avatarStyle = group.x_avatar_url ? `style="background-image: url('${group.x_avatar_url}'); background-size: cover; background-position: center;"` : '';
@@ -1500,7 +1527,7 @@ function renderGroupTab() {
             </td>
             <td>${membersCount} Members</td>
             <td>${group.debut_date || '-'}</td>
-            <td style="font-weight: 700; color: var(--accent-blue);">${totalFollowers.toLocaleString()}</td>
+            <td>${getSnsLinksHtml(group)}</td>
         `;
 
         row.addEventListener("click", () => {
@@ -1526,15 +1553,13 @@ function renderMemberTab() {
     });
 
     if (filteredMembers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 20px;">No members found</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 20px;">No members found</td></tr>`;
         return;
     }
 
     filteredMembers.sort((a, b) => a.name.localeCompare(b.name));
 
     filteredMembers.forEach(m => {
-        const stats = getLatestStats(m.name);
-        const totalFollowers = stats.Instagram + stats.X + stats.Facebook + stats.TikTok;
         const initials = m.name.slice(0, 2).toUpperCase();
         const avatarStyle = m.x_avatar_url ? `style="background-image: url('${m.x_avatar_url}'); background-size: cover; background-position: center;"` : '';
 
@@ -1563,9 +1588,7 @@ function renderMemberTab() {
                     <span style="font-size: 13px;">${m.color}</span>
                 </div>
             </td>
-            <td style="font-weight: 700; color: var(--accent-blue);">${totalFollowers.toLocaleString()}</td>
-            <td>${stats.Instagram > 0 ? stats.Instagram.toLocaleString() : '-'}</td>
-            <td>${stats.X > 0 ? stats.X.toLocaleString() : '-'}</td>
+            <td>${getSnsLinksHtml(m)}</td>
         `;
 
         row.addEventListener("click", () => {
@@ -1622,14 +1645,13 @@ function renderColorTab() {
         matchingMembers.forEach(m => {
             const card = document.createElement("div");
             card.classList.add("member-card");
+            card.classList.add("no-toggle"); // Disable comparative checkbox
             card.style.setProperty("--card-glow-color", colorCode);
             card.style.setProperty("--member-color", colorCode);
             card.style.padding = "16px";
 
             const initials = m.name.slice(0, 2).toUpperCase();
             const avatarStyle = m.x_avatar_url ? `style="background-image: url('${m.x_avatar_url}'); background-size: cover; background-position: center;"` : '';
-            const stats = getLatestStats(m.name);
-            const totalFollowers = stats.Instagram + stats.X + stats.Facebook + stats.TikTok;
 
             card.innerHTML = `
                 <div class="card-top" onclick="window.location.href='profile.html?name=${encodeURIComponent(m.name)}'" style="margin: -6px -6px 0 -6px; padding: 6px;">
@@ -1640,10 +1662,6 @@ function renderColorTab() {
                             <span class="group-badge" style="padding: 1px 6px;">${m.group}</span>
                         </span>
                     </div>
-                </div>
-                <div style="border-top: 1px solid var(--border-color); padding-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; color: var(--text-secondary);">Total Reach:</span>
-                    <span style="font-size: 12px; font-weight: 700; color: white;">${totalFollowers.toLocaleString()}</span>
                 </div>
             `;
             cardsGrid.appendChild(card);
