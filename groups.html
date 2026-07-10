@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groups Directory - THAIDORU STATS</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239D4DFF%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%2223 6 13.5 15.5 8.5 10.5 1 18%22></polyline><polyline points=%2217 6 23 6 23 12%22></polyline></svg>">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@0.300.0"></script>
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="index.css">
+    
+    <!-- Vercel Web Analytics -->
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    
+    <!-- Vercel Speed Insights -->
+    <script>
+      window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
+</head>
+<body>
+    <!-- Glow Backdrops -->
+    <div class="glow-bg glow-1"></div>
+    <div class="glow-bg glow-2"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <a href="index.html" class="home-btn" title="Back to Dashboard">
+                    <i data-lucide="home"></i>
+                </a>
+                <div style="margin-left: 15px;">
+                    <h1 id="header-member-title">THAIDORU STATS</h1>
+                    <p class="subtitle" style="margin: 0;" id="last-updated">Loading last update...</p>
+                </div>
+            </div>
+            
+            <!-- Global Autocomplete Searchbar -->
+            <div class="global-search-container">
+                <div class="search-input-wrapper">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="global-search-input" placeholder="Search members or groups..." autocomplete="off">
+                </div>
+                <div class="search-suggestions-box" id="search-suggestions"></div>
+            </div>
+        </header>
+
+        <!-- Top Navigation Tabs -->
+        <nav class="top-nav-tabs">
+            <a href="index.html" class="nav-tab" data-tab="home">
+                <i data-lucide="home"></i> Home
+            </a>
+            <a href="agencies.html" class="nav-tab" data-tab="agency">
+                <i data-lucide="building-2"></i> Agency
+            </a>
+            <a href="groups.html" class="nav-tab active" data-tab="group">
+                <i data-lucide="users"></i> Group
+            </a>
+            <a href="members.html" class="nav-tab" data-tab="member">
+                <i data-lucide="user"></i> Member
+            </a>
+            <a href="colors.html" class="nav-tab" data-tab="color">
+                <i data-lucide="palette"></i> Color
+            </a>
+        </nav>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <section class="grid-section">
+                <div class="section-title-bar" style="margin-bottom: 24px;">
+                    <h2><i data-lucide="users" class="glow-icon"></i> Groups Directory</h2>
+                    <div class="directory-filters">
+                        <div class="filter-dropdown">
+                            <label for="group-tab-agency-filter">Agency:</label>
+                            <select id="group-tab-agency-filter">
+                                <option value="all">All Agencies</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="search-panel" style="margin-bottom: 24px; display: flex; justify-content: flex-start;">
+                    <div class="search-box">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="group-search-input" placeholder="Search groups...">
+                    </div>
+                </div>
+                <div class="directory-list-container">
+                    <table class="directory-table">
+                        <thead>
+                            <tr>
+                                <th>Group Name</th>
+                                <th>Company (Agency)</th>
+                                <th>Members Count</th>
+                                <th>Debut Date</th>
+                                <th>SNS Links</th>
+                            </tr>
+                        </thead>
+                        <tbody id="group-directory-body">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Custom Profile Hover/Click Popup -->
+    <div id="custom-profile-popup" style="display: none; position: absolute; background: #16161A; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); z-index: 10000; cursor: pointer; transition: all 0.2s;" onclick="event.stopPropagation();">
+        <span style="font-size: 12px; font-weight: 700; color: white; display: flex; align-items: center; gap: 8px; font-family: var(--font-primary);">
+            <svg viewBox="0 0 448 512" style="width: 12px; height: 12px; fill: #1DB954;"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/></svg>
+            View Profile
+        </span>
+    </div>
+
+    <!-- App Logic Script -->
+    <script src="groups.js"></script>
+</body>
+</html>
