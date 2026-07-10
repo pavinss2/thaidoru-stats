@@ -77,6 +77,13 @@ function getColoredNamesString(list) {
 // Initialization & Data Fetching
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
+    // Instant local storage cache check for the last updated timestamp
+    const cachedTime = localStorage.getItem("lastUpdatedTime");
+    const lastUpdatedEl = document.getElementById("last-updated");
+    if (cachedTime && lastUpdatedEl) {
+        lastUpdatedEl.innerText = cachedTime;
+    }
+
     // Initialize Lucide icons
     lucide.createIcons();
     
@@ -99,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
         idolsList = idols;
         historyData = parsedData;
         
-        // Display the latest scrape update timestamp (stored in UTC+7 by scraper)
+        // Display and cache the latest scrape update timestamp
         if (historyData.length > 0) {
             const sortedHistory = [...historyData].sort((a, b) => {
                 const dateComp = a.Date.localeCompare(b.Date);
@@ -108,7 +115,12 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             const latest = sortedHistory[sortedHistory.length - 1];
             const timeStr = latest.Timestamp ? ` @ ${latest.Timestamp.slice(0, 5)} (UTC+7)` : "";
-            document.getElementById("last-updated").innerText = `Last Update: ${latest.Date}${timeStr}`;
+            const formattedTime = `Last Update: ${latest.Date}${timeStr}`;
+            
+            if (lastUpdatedEl) {
+                lastUpdatedEl.innerText = formattedTime;
+            }
+            localStorage.setItem("lastUpdatedTime", formattedTime);
         }
         
         // Initial setup and render
@@ -127,17 +139,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const urlParams = new URLSearchParams(window.location.search);
         const viewParam = urlParams.get("view");
         if (viewParam) {
-            if (viewParam === "agency") {
-                window.location.href = "agencies.html";
-                return;
-            } else if (viewParam === "group") {
-                window.location.href = "groups.html";
-                return;
-            } else if (viewParam === "member") {
-                window.location.href = "members.html";
+            if (viewParam === "agency" || viewParam === "group" || viewParam === "member") {
+                window.location.href = `directory.html?view=${viewParam}`;
                 return;
             } else if (viewParam === "color") {
-                window.location.href = "colors.html" + window.location.hash;
+                window.location.href = `directory.html?view=color` + window.location.hash;
                 return;
             }
         }

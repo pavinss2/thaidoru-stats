@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Members Directory - THAIDORU STATS</title>
+    <title>Directories - THAIDORU STATS</title>
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239D4DFF%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%2223 6 13.5 15.5 8.5 10.5 1 18%22></polyline><polyline points=%2217 6 23 6 23 12%22></polyline></svg>">
     
@@ -18,6 +18,13 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" href="index.css">
     
+    <style>
+        /* Hide all sections by default to prevent any flicker before JS executes */
+        .directory-section {
+            display: none;
+        }
+    </style>
+
     <!-- Vercel Web Analytics -->
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -39,7 +46,7 @@
         <!-- Header -->
         <header class="app-header">
             <div class="brand">
-                <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 15px;">
+                <a href="index.html" style="text-decoration: none; display: flex; align-items: center;">
                     <div class="logo-box">
                         <i data-lucide="activity" class="glow-icon"></i>
                     </div>
@@ -54,16 +61,16 @@
                 <a href="index.html" class="nav-tab" data-tab="home">
                     <i data-lucide="home"></i> Home
                 </a>
-                <a href="agencies.html" class="nav-tab" data-tab="agency">
+                <a href="directory.html?view=agency" class="nav-tab" data-tab="agency">
                     <i data-lucide="building-2"></i> Agency
                 </a>
-                <a href="groups.html" class="nav-tab" data-tab="group">
+                <a href="directory.html?view=group" class="nav-tab" data-tab="group">
                     <i data-lucide="users"></i> Group
                 </a>
-                <a href="members.html" class="nav-tab active" data-tab="member">
+                <a href="directory.html?view=member" class="nav-tab" data-tab="member">
                     <i data-lucide="user"></i> Member
                 </a>
-                <a href="colors.html" class="nav-tab" data-tab="color">
+                <a href="directory.html?view=color" class="nav-tab" data-tab="color">
                     <i data-lucide="palette"></i> Color
                 </a>
             </nav>
@@ -78,9 +85,75 @@
             </div>
         </header>
 
-        <!-- Main Workspace -->
+        <!-- Main Content -->
         <main class="main-content">
-            <section class="grid-section">
+            
+            <!-- AGENCY SECTION -->
+            <section class="grid-section directory-section" id="agency-section">
+                <div class="section-title-bar" style="margin-bottom: 24px;">
+                    <h2><i data-lucide="building-2" class="glow-icon"></i> Agencies Directory</h2>
+                </div>
+                <div class="search-panel" style="margin-bottom: 24px; display: flex; justify-content: flex-start;">
+                    <div class="search-box">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="agency-search-input" placeholder="Search agencies...">
+                    </div>
+                </div>
+                <div class="directory-list-container">
+                    <table class="directory-table">
+                        <thead>
+                            <tr>
+                                <th>Agency Name</th>
+                                <th>Groups Count</th>
+                                <th>Members Count</th>
+                            </tr>
+                        </thead>
+                        <tbody id="agency-directory-body">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- GROUP SECTION -->
+            <section class="grid-section directory-section" id="group-section">
+                <div class="section-title-bar" style="margin-bottom: 24px;">
+                    <h2><i data-lucide="users" class="glow-icon"></i> Groups Directory</h2>
+                    <div class="directory-filters">
+                        <div class="filter-dropdown">
+                            <label for="group-tab-agency-filter">Agency:</label>
+                            <select id="group-tab-agency-filter">
+                                <option value="all">All Agencies</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="search-panel" style="margin-bottom: 24px; display: flex; justify-content: flex-start;">
+                    <div class="search-box">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="group-search-input" placeholder="Search groups...">
+                    </div>
+                </div>
+                <div class="directory-list-container">
+                    <table class="directory-table">
+                        <thead>
+                            <tr>
+                                <th>Group Name</th>
+                                <th>Company (Agency)</th>
+                                <th>Members Count</th>
+                                <th>Debut Date</th>
+                                <th>SNS Links</th>
+                            </tr>
+                        </thead>
+                        <tbody id="group-directory-body">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- MEMBER SECTION -->
+            <section class="grid-section directory-section" id="member-section">
                 <div class="section-title-bar" style="margin-bottom: 24px;">
                     <h2><i data-lucide="user" class="glow-icon"></i> Members Directory</h2>
                     <div class="directory-filters">
@@ -127,6 +200,37 @@
                     </table>
                 </div>
             </section>
+
+            <!-- COLOR SECTION -->
+            <section class="grid-section directory-section" id="color-section">
+                <div class="section-title-bar" style="margin-bottom: 24px;">
+                    <h2><i data-lucide="palette" class="glow-icon"></i> Members by Theme Color</h2>
+                    <div class="directory-filters">
+                        <div class="filter-dropdown">
+                            <label for="color-tab-group-filter">Group:</label>
+                            <select id="color-tab-group-filter">
+                                <option value="all">All Groups</option>
+                            </select>
+                        </div>
+                        <div class="filter-dropdown">
+                            <label for="color-tab-agency-filter">Agency:</label>
+                            <select id="color-tab-agency-filter">
+                                <option value="all">All Agencies</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="search-panel" style="margin-bottom: 24px; display: flex; justify-content: flex-start;">
+                    <div class="search-box">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="color-search-input" placeholder="Search members by name...">
+                    </div>
+                </div>
+                <div class="colors-grouped-container" id="colors-grouped-wrapper">
+                    <!-- Dynamic color groups containing lists of member cards -->
+                </div>
+            </section>
+
         </main>
     </div>
 
@@ -138,7 +242,7 @@
         </span>
     </div>
 
-    <!-- App Logic Script -->
-    <script src="members.js"></script>
+    <!-- Unified Directory Controller -->
+    <script src="directory.js"></script>
 </body>
 </html>

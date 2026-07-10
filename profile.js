@@ -187,7 +187,7 @@ function renderProfilePanel() {
     
     const colorName = memberProfile.color || "None";
     if (memberProfile.color) {
-        document.getElementById("profile-color-val").innerHTML = `<a href="colors.html#${encodeURIComponent(colorName)}">${colorName}</a>`;
+        document.getElementById("profile-color-val").innerHTML = `<a href="directory.html?view=color#${encodeURIComponent(colorName)}">${colorName}</a>`;
     } else {
         document.getElementById("profile-color-val").innerText = "None";
     }
