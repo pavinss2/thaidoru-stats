@@ -11,6 +11,13 @@ let chartType = "line";    // 'line', 'bar'
 let growthChart = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
+    // Instant local storage cache check for the last updated timestamp
+    const cachedTime = localStorage.getItem("lastUpdatedTime");
+    const lastUpdatedEl = document.getElementById("last-updated");
+    if (cachedTime && lastUpdatedEl) {
+        lastUpdatedEl.innerText = cachedTime;
+    }
+
     // 1. Get Member Name from Query String
     const urlParams = new URLSearchParams(window.location.search);
     selectedMemberName = urlParams.get("name") || "";
@@ -105,6 +112,24 @@ async function loadDatasets() {
                 });
             }
         });
+
+        // Display and cache the latest scrape update timestamp
+        if (historyData.length > 0) {
+            const sortedHistory = [...historyData].sort((a, b) => {
+                const dateComp = a.Date.localeCompare(b.Date);
+                if (dateComp !== 0) return dateComp;
+                return (a.Timestamp || "").localeCompare(b.Timestamp || "");
+            });
+            const latest = sortedHistory[sortedHistory.length - 1];
+            const timeStr = latest.Timestamp ? ` @ ${latest.Timestamp.slice(0, 5)} (UTC+7)` : "";
+            const formattedTime = `Last Update: ${latest.Date}${timeStr}`;
+            
+            const lastUpdatedEl = document.getElementById("last-updated");
+            if (lastUpdatedEl) {
+                lastUpdatedEl.innerText = formattedTime;
+            }
+            localStorage.setItem("lastUpdatedTime", formattedTime);
+        }
     } catch (e) {
         console.error("Error loading profile datasets:", e);
     }
@@ -148,10 +173,6 @@ function renderProfilePanel() {
     // Set colors
     const sidebar = document.getElementById("profile-card");
     sidebar.style.setProperty("--member-color", groupColor);
-    
-    // Header page text
-    document.getElementById("header-member-title").innerText = name.toUpperCase();
-    document.getElementById("header-member-subtitle").innerText = isGroup ? "Official Group Channel Analytics" : `${memberProfile.group}`;
     
     // Avatar
     const avatar = document.getElementById("profile-avatar");

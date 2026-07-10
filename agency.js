@@ -3,6 +3,13 @@ let historyData = [];
 let selectedAgencyName = "";
 
 document.addEventListener("DOMContentLoaded", async () => {
+    // Instant local storage cache check for the last updated timestamp
+    const cachedTime = localStorage.getItem("lastUpdatedTime");
+    const lastUpdatedEl = document.getElementById("last-updated");
+    if (cachedTime && lastUpdatedEl) {
+        lastUpdatedEl.innerText = cachedTime;
+    }
+
     // 1. Get Agency Name from Query String
     const urlParams = new URLSearchParams(window.location.search);
     selectedAgencyName = urlParams.get("name") || "";
@@ -79,6 +86,23 @@ async function loadDatasets() {
                 });
             }
         });
+        // Display and cache the latest scrape update timestamp
+        if (historyData.length > 0) {
+            const sortedHistory = [...historyData].sort((a, b) => {
+                const dateComp = a.Date.localeCompare(b.Date);
+                if (dateComp !== 0) return dateComp;
+                return (a.Timestamp || "").localeCompare(b.Timestamp || "");
+            });
+            const latest = sortedHistory[sortedHistory.length - 1];
+            const timeStr = latest.Timestamp ? ` @ ${latest.Timestamp.slice(0, 5)} (UTC+7)` : "";
+            const formattedTime = `Last Update: ${latest.Date}${timeStr}`;
+            
+            const lastUpdatedEl = document.getElementById("last-updated");
+            if (lastUpdatedEl) {
+                lastUpdatedEl.innerText = formattedTime;
+            }
+            localStorage.setItem("lastUpdatedTime", formattedTime);
+        }
     } catch (e) {
         console.error("Error loading agency datasets:", e);
     }
@@ -134,7 +158,6 @@ function renderAgencyPage() {
 
     // If no groups or members, show message and return
     if (agencyGroups.length === 0 && agencyMembers.length === 0) {
-        document.getElementById("header-agency-title").innerText = selectedAgencyName.toUpperCase();
         document.getElementById("agency-name").innerText = selectedAgencyName;
         document.getElementById("agency-groups-container").innerHTML = `<div class="no-suggestions-row" style="color:var(--text-secondary); text-align:center; padding: 40px 0; width:100%; grid-column: 1/-1;">No groups found for agency "${selectedAgencyName}"</div>`;
         return;
@@ -148,7 +171,6 @@ function renderAgencyPage() {
     }
 
     // Render title
-    document.getElementById("header-agency-title").innerText = displayAgencyName.toUpperCase();
     document.getElementById("agency-name").innerText = displayAgencyName;
 
     // Calculate agency totals
