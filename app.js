@@ -12,6 +12,20 @@ let filterGroup = "all";
 let filterColor = "all";
 let sortSelect = "name";
 
+// Top Tab state
+let activeTab = "home";
+let agencySearchQuery = "";
+let groupSearchQuery = "";
+let memberSearchQuery = "";
+let colorSearchQuery = "";
+
+let groupTabAgencyFilter = "all";
+let memberTabGroupFilter = "all";
+let memberTabAgencyFilter = "all";
+let memberTabColorFilter = "all";
+let colorTabGroupFilter = "all";
+let colorTabAgencyFilter = "all";
+
 // Chart Controls (Top of the graph)
 let startDate = "";
 let endDate = "";
@@ -105,9 +119,18 @@ document.addEventListener("DOMContentLoaded", () => {
         selectedIdols = groups.map(g => g.name);
         
         setupFilters();
+        setupTabs();
+        populateTabFilters();
         populateDateFilters();
         filterAndRender();
         renderGrowthChart();
+
+        // Process view parameter in URL on load
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewParam = urlParams.get("view");
+        if (viewParam) {
+            switchTab(viewParam, false);
+        }
     })
     .catch(err => {
         console.error("Error loading dashboard data:", err);
@@ -1161,4 +1184,474 @@ document.addEventListener("click", () => {
         popup.style.display = "none";
     }
 });
+
+// ==========================================
+// Top Navigation Tab System
+// ==========================================
+function setupTabs() {
+    // Tab click handlers
+    const tabs = document.querySelectorAll(".nav-tab");
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            const tabId = tab.getAttribute("data-tab");
+            switchTab(tabId);
+        });
+    });
+
+    // Agency Tab Search
+    const agencySearch = document.getElementById("agency-search-input");
+    if (agencySearch) {
+        agencySearch.addEventListener("input", (e) => {
+            agencySearchQuery = e.target.value.toLowerCase().trim();
+            renderAgencyTab();
+        });
+    }
+
+    // Group Tab Search and Filters
+    const groupSearch = document.getElementById("group-search-input");
+    if (groupSearch) {
+        groupSearch.addEventListener("input", (e) => {
+            groupSearchQuery = e.target.value.toLowerCase().trim();
+            renderGroupTab();
+        });
+    }
+    const groupTabAgencyFilterSelect = document.getElementById("group-tab-agency-filter");
+    if (groupTabAgencyFilterSelect) {
+        groupTabAgencyFilterSelect.addEventListener("change", (e) => {
+            groupTabAgencyFilter = e.target.value;
+            renderGroupTab();
+        });
+    }
+
+    // Member Tab Search and Filters
+    const memberSearch = document.getElementById("member-search-input");
+    if (memberSearch) {
+        memberSearch.addEventListener("input", (e) => {
+            memberSearchQuery = e.target.value.toLowerCase().trim();
+            renderMemberTab();
+        });
+    }
+    const memberTabGroupFilterSelect = document.getElementById("member-tab-group-filter");
+    if (memberTabGroupFilterSelect) {
+        memberTabGroupFilterSelect.addEventListener("change", (e) => {
+            memberTabGroupFilter = e.target.value;
+            renderMemberTab();
+        });
+    }
+    const memberTabAgencyFilterSelect = document.getElementById("member-tab-agency-filter");
+    if (memberTabAgencyFilterSelect) {
+        memberTabAgencyFilterSelect.addEventListener("change", (e) => {
+            memberTabAgencyFilter = e.target.value;
+            renderMemberTab();
+        });
+    }
+    const memberTabColorFilterSelect = document.getElementById("member-tab-color-filter");
+    if (memberTabColorFilterSelect) {
+        memberTabColorFilterSelect.addEventListener("change", (e) => {
+            memberTabColorFilter = e.target.value;
+            renderMemberTab();
+        });
+    }
+
+    // Color Tab Search and Filters
+    const colorSearch = document.getElementById("color-search-input");
+    if (colorSearch) {
+        colorSearch.addEventListener("input", (e) => {
+            colorSearchQuery = e.target.value.toLowerCase().trim();
+            renderColorTab();
+        });
+    }
+    const colorTabGroupFilterSelect = document.getElementById("color-tab-group-filter");
+    if (colorTabGroupFilterSelect) {
+        colorTabGroupFilterSelect.addEventListener("change", (e) => {
+            colorTabGroupFilter = e.target.value;
+            renderColorTab();
+        });
+    }
+    const colorTabAgencyFilterSelect = document.getElementById("color-tab-agency-filter");
+    if (colorTabAgencyFilterSelect) {
+        colorTabAgencyFilterSelect.addEventListener("change", (e) => {
+            colorTabAgencyFilter = e.target.value;
+            renderColorTab();
+        });
+    }
+}
+
+function switchTab(tabId, updateUrl = true) {
+    activeTab = tabId;
+    
+    // Switch active nav buttons
+    document.querySelectorAll(".nav-tab").forEach(btn => {
+        if (btn.getAttribute("data-tab") === tabId) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    });
+
+    // Show/hide sections
+    document.querySelectorAll(".tab-section-content").forEach(sec => {
+        sec.style.display = "none";
+    });
+    
+    const targetSection = document.getElementById(tabId + "-tab-section");
+    if (targetSection) {
+        targetSection.style.display = "block";
+    }
+
+    // Populate and render tab contents
+    if (tabId === "agency") {
+        renderAgencyTab();
+    } else if (tabId === "group") {
+        renderGroupTab();
+    } else if (tabId === "member") {
+        renderMemberTab();
+    } else if (tabId === "color") {
+        renderColorTab();
+        
+        // Check hash scroll (e.g. ?view=color#Red)
+        const hash = window.location.hash;
+        if (hash) {
+            const targetId = decodeURIComponent(hash.substring(1));
+            setTimeout(() => {
+                const targetEl = document.getElementById("color-group-" + targetId.toLowerCase());
+                if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+                    targetEl.classList.add("highlight-pulse");
+                    setTimeout(() => {
+                        targetEl.classList.remove("highlight-pulse");
+                    }, 2500);
+                }
+            }, 300);
+        }
+    }
+
+    if (updateUrl && window.history.pushState) {
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?view=" + tabId + window.location.hash;
+        window.history.pushState({ path: newUrl }, "", newUrl);
+    }
+}
+
+function populateTabFilters() {
+    // Extract unique values
+    const groups = [...new Set(idolsList.filter(i => i.group).map(i => i.group))].sort();
+    const agencies = [...new Set(idolsList.filter(i => i.agency).map(i => i.agency))].sort();
+    const colors = [...new Set(idolsList.filter(i => i.color).map(i => i.color))].sort();
+
+    // Group Tab Agency Filter
+    const groupTabAgencySelect = document.getElementById("group-tab-agency-filter");
+    if (groupTabAgencySelect) {
+        groupTabAgencySelect.innerHTML = '<option value="all">All Agencies</option>';
+        agencies.forEach(a => {
+            const opt = document.createElement("option");
+            opt.value = a;
+            opt.innerText = a;
+            groupTabAgencySelect.appendChild(opt);
+        });
+    }
+
+    // Member Tab Filters
+    const memberTabGroupSelect = document.getElementById("member-tab-group-filter");
+    if (memberTabGroupSelect) {
+        memberTabGroupSelect.innerHTML = '<option value="all">All Groups</option>';
+        groups.forEach(g => {
+            const opt = document.createElement("option");
+            opt.value = g;
+            opt.innerText = g;
+            memberTabGroupSelect.appendChild(opt);
+        });
+    }
+
+    const memberTabAgencySelect = document.getElementById("member-tab-agency-filter");
+    if (memberTabAgencySelect) {
+        memberTabAgencySelect.innerHTML = '<option value="all">All Agencies</option>';
+        agencies.forEach(a => {
+            const opt = document.createElement("option");
+            opt.value = a;
+            opt.innerText = a;
+            memberTabAgencySelect.appendChild(opt);
+        });
+    }
+
+    const memberTabColorSelect = document.getElementById("member-tab-color-filter");
+    if (memberTabColorSelect) {
+        memberTabColorSelect.innerHTML = '<option value="all">All Colors</option>';
+        colors.forEach(c => {
+            const opt = document.createElement("option");
+            opt.value = c;
+            opt.innerText = c;
+            memberTabColorSelect.appendChild(opt);
+        });
+    }
+
+    // Color Tab Filters
+    const colorTabGroupSelect = document.getElementById("color-tab-group-filter");
+    if (colorTabGroupSelect) {
+        colorTabGroupSelect.innerHTML = '<option value="all">All Groups</option>';
+        groups.forEach(g => {
+            const opt = document.createElement("option");
+            opt.value = g;
+            opt.innerText = g;
+            colorTabGroupSelect.appendChild(opt);
+        });
+    }
+
+    const colorTabAgencySelect = document.getElementById("color-tab-agency-filter");
+    if (colorTabAgencySelect) {
+        colorTabAgencySelect.innerHTML = '<option value="all">All Agencies</option>';
+        agencies.forEach(a => {
+            const opt = document.createElement("option");
+            opt.value = a;
+            opt.innerText = a;
+            colorTabAgencySelect.appendChild(opt);
+        });
+    }
+}
+
+function renderAgencyTab() {
+    const tbody = document.getElementById("agency-directory-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const agencies = [...new Set(idolsList.filter(i => i.agency).map(i => i.agency))];
+    const filteredAgencies = agencies.filter(a => a.toLowerCase().includes(agencySearchQuery));
+
+    if (filteredAgencies.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted); padding: 20px;">No agencies found matching "${agencySearchQuery}"</td></tr>`;
+        return;
+    }
+
+    filteredAgencies.forEach(agencyName => {
+        const agencyGroups = idolsList.filter(i => i.type === "group" && i.agency === agencyName);
+        const agencyMembers = idolsList.filter(i => i.type === "member" && i.agency === agencyName);
+
+        // Sum followers
+        let totalFollowers = 0;
+        [...agencyGroups, ...agencyMembers].forEach(item => {
+            const stats = getLatestStats(item.name);
+            totalFollowers += stats.Instagram + stats.X + stats.Facebook + stats.TikTok;
+        });
+
+        const row = document.createElement("tr");
+        row.style.cursor = "pointer";
+        row.innerHTML = `
+            <td style="font-weight: 700; color: white;">
+                <div style="display:flex; align-items:center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(157, 77, 255, 0.15); border: 1px solid rgba(157, 77, 255, 0.3); display:flex; align-items:center; justify-content:center; color: var(--accent-purple);">
+                        <i data-lucide="building-2" style="width:16px; height: 16px;"></i>
+                    </div>
+                    <span>${agencyName}</span>
+                </div>
+            </td>
+            <td>${agencyGroups.length} Groups</td>
+            <td>${agencyMembers.length} Members</td>
+            <td style="font-weight: 700; color: var(--accent-blue);">${totalFollowers.toLocaleString()}</td>
+        `;
+
+        row.addEventListener("click", () => {
+            window.location.href = `agency.html?name=${encodeURIComponent(agencyName)}`;
+        });
+
+        tbody.appendChild(row);
+    });
+
+    if (window.lucide) window.lucide.createIcons();
+}
+
+function renderGroupTab() {
+    const tbody = document.getElementById("group-directory-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const groupsList = idolsList.filter(i => i.type === "group");
+    const filteredGroups = groupsList.filter(g => {
+        if (groupSearchQuery && !g.name.toLowerCase().includes(groupSearchQuery)) return false;
+        if (groupTabAgencyFilter !== "all" && g.agency !== groupTabAgencyFilter) return false;
+        return true;
+    });
+
+    if (filteredGroups.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 20px;">No groups found</td></tr>`;
+        return;
+    }
+
+    filteredGroups.sort((a, b) => a.name.localeCompare(b.name));
+
+    filteredGroups.forEach(group => {
+        const stats = getLatestStats(group.name);
+        const totalFollowers = stats.Instagram + stats.X + stats.Facebook + stats.TikTok;
+        const membersCount = idolsList.filter(i => i.type === "member" && i.group === group.name).length;
+        const initials = group.name.slice(0, 2).toUpperCase();
+        const avatarStyle = group.x_avatar_url ? `style="background-image: url('${group.x_avatar_url}'); background-size: cover; background-position: center;"` : '';
+
+        const row = document.createElement("tr");
+        row.style.cursor = "pointer";
+        row.innerHTML = `
+            <td style="font-weight: 700; color: white;">
+                <div style="display:flex; align-items:center; gap: 10px;">
+                    <div class="member-avatar" ${avatarStyle} style="width:32px; height:32px; font-size: 11px; --card-glow-color: ${resolveColor(group.color)}">${group.x_avatar_url ? '' : initials}</div>
+                    <span>${group.name}</span>
+                </div>
+            </td>
+            <td>
+                <a href="agency.html?name=${encodeURIComponent(group.agency)}" onclick="event.stopPropagation();" style="color: var(--text-secondary); text-decoration: none;" onmouseenter="this.style.color='var(--accent-purple)'" onmouseleave="this.style.color='var(--text-secondary)'">
+                    ${group.agency || 'Catsolute'}
+                </a>
+            </td>
+            <td>${membersCount} Members</td>
+            <td>${group.debut_date || '-'}</td>
+            <td style="font-weight: 700; color: var(--accent-blue);">${totalFollowers.toLocaleString()}</td>
+        `;
+
+        row.addEventListener("click", () => {
+            window.location.href = `profile.html?name=${encodeURIComponent(group.name)}`;
+        });
+
+        tbody.appendChild(row);
+    });
+}
+
+function renderMemberTab() {
+    const tbody = document.getElementById("member-directory-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const membersList = idolsList.filter(i => i.type === "member");
+    const filteredMembers = membersList.filter(m => {
+        if (memberSearchQuery && !m.name.toLowerCase().includes(memberSearchQuery) && !m.group.toLowerCase().includes(memberSearchQuery)) return false;
+        if (memberTabGroupFilter !== "all" && m.group !== memberTabGroupFilter) return false;
+        if (memberTabAgencyFilter !== "all" && m.agency !== memberTabAgencyFilter) return false;
+        if (memberTabColorFilter !== "all" && m.color !== memberTabColorFilter) return false;
+        return true;
+    });
+
+    if (filteredMembers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 20px;">No members found</td></tr>`;
+        return;
+    }
+
+    filteredMembers.sort((a, b) => a.name.localeCompare(b.name));
+
+    filteredMembers.forEach(m => {
+        const stats = getLatestStats(m.name);
+        const totalFollowers = stats.Instagram + stats.X + stats.Facebook + stats.TikTok;
+        const initials = m.name.slice(0, 2).toUpperCase();
+        const avatarStyle = m.x_avatar_url ? `style="background-image: url('${m.x_avatar_url}'); background-size: cover; background-position: center;"` : '';
+
+        const row = document.createElement("tr");
+        row.style.cursor = "pointer";
+        row.innerHTML = `
+            <td style="font-weight: 700; color: white;">
+                <div style="display:flex; align-items:center; gap: 10px;">
+                    <div class="member-avatar" ${avatarStyle} style="width:32px; height:32px; font-size: 11px; --card-glow-color: ${resolveColor(m.color)}">${m.x_avatar_url ? '' : initials}</div>
+                    <span>${m.name}</span>
+                </div>
+            </td>
+            <td>
+                <a href="profile.html?name=${encodeURIComponent(m.group)}" onclick="event.stopPropagation();" style="color: var(--text-secondary); text-decoration: none;" onmouseenter="this.style.color='var(--accent-purple)'" onmouseleave="this.style.color='var(--text-secondary)'">
+                    ${m.group}
+                </a>
+            </td>
+            <td>
+                <a href="agency.html?name=${encodeURIComponent(m.agency)}" onclick="event.stopPropagation();" style="color: var(--text-secondary); text-decoration: none;" onmouseenter="this.style.color='var(--accent-purple)'" onmouseleave="this.style.color='var(--text-secondary)'">
+                    ${m.agency || 'Catsolute'}
+                </a>
+            </td>
+            <td>
+                <div style="display:flex; align-items:center; gap: 6px;">
+                    <span class="color-dot" style="background: ${resolveColor(m.color)}; box-shadow: 0 0 6px ${resolveColor(m.color)}; width: 8px; height: 8px; border-radius: 50%; display:inline-block;"></span>
+                    <span style="font-size: 13px;">${m.color}</span>
+                </div>
+            </td>
+            <td style="font-weight: 700; color: var(--accent-blue);">${totalFollowers.toLocaleString()}</td>
+            <td>${stats.Instagram > 0 ? stats.Instagram.toLocaleString() : '-'}</td>
+            <td>${stats.X > 0 ? stats.X.toLocaleString() : '-'}</td>
+        `;
+
+        row.addEventListener("click", () => {
+            window.location.href = `profile.html?name=${encodeURIComponent(m.name)}`;
+        });
+
+        tbody.appendChild(row);
+    });
+}
+
+function renderColorTab() {
+    const wrapper = document.getElementById("colors-grouped-wrapper");
+    if (!wrapper) return;
+    wrapper.innerHTML = "";
+
+    const membersList = idolsList.filter(i => i.type === "member");
+    const colors = ["Red", "Pink", "Yellow", "Green", "White", "Blue", "Purple", "Black", "Orange"];
+    let matchesFound = false;
+
+    colors.forEach(colorName => {
+        const matchingMembers = membersList.filter(m => {
+            if (m.color !== colorName) return false;
+            if (colorSearchQuery && !m.name.toLowerCase().includes(colorSearchQuery) && !m.group.toLowerCase().includes(colorSearchQuery)) return false;
+            if (colorTabGroupFilter !== "all" && m.group !== colorTabGroupFilter) return false;
+            if (colorTabAgencyFilter !== "all" && m.agency !== colorTabAgencyFilter) return false;
+            return true;
+        });
+
+        if (matchingMembers.length === 0) return;
+
+        matchesFound = true;
+        const colorCode = resolveColor(colorName);
+        const colorSec = document.createElement("div");
+        colorSec.id = "color-group-" + colorName.toLowerCase();
+        colorSec.classList.add("color-group-section");
+        colorSec.style.marginBottom = "30px";
+        colorSec.style.padding = "20px";
+        colorSec.style.background = "rgba(20, 20, 25, 0.4)";
+        colorSec.style.border = "1px solid var(--border-color)";
+        colorSec.style.borderRadius = "16px";
+        colorSec.style.transition = "var(--transition-smooth)";
+
+        colorSec.innerHTML = `
+            <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px; color: ${colorCode}; display: flex; align-items: center; gap: 8px; text-shadow: 0 0 10px color-mix(in srgb, ${colorCode} 30%, transparent);">
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: ${colorCode}; box-shadow: 0 0 10px ${colorCode}; display: inline-block;"></span>
+                ${colorName} Theme (${matchingMembers.length})
+            </h3>
+            <div class="cards-grid" id="color-cards-${colorName.toLowerCase()}"></div>
+        `;
+
+        wrapper.appendChild(colorSec);
+        const cardsGrid = document.getElementById(`color-cards-${colorName.toLowerCase()}`);
+
+        matchingMembers.forEach(m => {
+            const card = document.createElement("div");
+            card.classList.add("member-card");
+            card.style.setProperty("--card-glow-color", colorCode);
+            card.style.setProperty("--member-color", colorCode);
+            card.style.padding = "16px";
+
+            const initials = m.name.slice(0, 2).toUpperCase();
+            const avatarStyle = m.x_avatar_url ? `style="background-image: url('${m.x_avatar_url}'); background-size: cover; background-position: center;"` : '';
+            const stats = getLatestStats(m.name);
+            const totalFollowers = stats.Instagram + stats.X + stats.Facebook + stats.TikTok;
+
+            card.innerHTML = `
+                <div class="card-top" onclick="window.location.href='profile.html?name=${encodeURIComponent(m.name)}'" style="margin: -6px -6px 0 -6px; padding: 6px;">
+                    <div class="member-avatar" ${avatarStyle} style="width: 44px; height: 44px; font-size: 14px; --card-glow-color: ${colorCode}">${m.x_avatar_url ? '' : initials}</div>
+                    <div class="member-meta">
+                        <span class="member-name" style="font-size: 16px;">${m.name}</span>
+                        <span class="member-tagline" style="font-size: 11px;">
+                            <span class="group-badge" style="padding: 1px 6px;">${m.group}</span>
+                        </span>
+                    </div>
+                </div>
+                <div style="border-top: 1px solid var(--border-color); padding-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: var(--text-secondary);">Total Reach:</span>
+                    <span style="font-size: 12px; font-weight: 700; color: white;">${totalFollowers.toLocaleString()}</span>
+                </div>
+            `;
+            cardsGrid.appendChild(card);
+        });
+    });
+
+    if (!matchesFound) {
+        wrapper.innerHTML = `<div class="no-suggestions-row" style="color:var(--text-secondary); text-align:center; padding: 40px 0; width:100%;">No members found matching the selected filters</div>`;
+    }
+}
 

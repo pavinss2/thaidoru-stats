@@ -65,174 +65,349 @@
             </div>
         </header>
 
+        <!-- Top Navigation Tabs -->
+        <nav class="top-nav-tabs">
+            <button class="nav-tab active" data-tab="home">
+                <i data-lucide="home"></i> Home
+            </button>
+            <button class="nav-tab" data-tab="agency">
+                <i data-lucide="building-2"></i> Agency
+            </button>
+            <button class="nav-tab" data-tab="group">
+                <i data-lucide="users"></i> Group
+            </button>
+            <button class="nav-tab" data-tab="member">
+                <i data-lucide="user"></i> Member
+            </button>
+            <button class="nav-tab" data-tab="color">
+                <i data-lucide="palette"></i> Color
+            </button>
+        </nav>
+
         <!-- Main Workspace -->
         <main class="main-content">
-            
-            <!-- Controls Bar -->
-            <section class="controls-panel" style="margin-bottom: 20px;">
-                <!-- View Mode Tabs -->
-                <div class="filter-group-container">
-                    <button class="filter-pill active" data-view="group">By Group</button>
-                    <button class="filter-pill" data-view="member">By Member</button>
-                </div>
-            </section>
-
-            <!-- Chart / Insights Section -->
-            <section class="chart-panel">
-                <div class="chart-header">
-                    <div>
-                        <h2>Standings (Instagram)</h2>
-                        <span class="chart-subtitle">Tracking selected items: </span>
+            <!-- Home Tab Section -->
+            <div id="home-tab-section" class="tab-section-content active">
+                <!-- Controls Bar -->
+                <section class="controls-panel" style="margin-bottom: 20px;">
+                    <!-- View Mode Tabs -->
+                    <div class="filter-group-container">
+                        <button class="filter-pill active" data-view="group">By Group</button>
+                        <button class="filter-pill" data-view="member">By Member</button>
                     </div>
-                    <!-- Chart Controls -->
-                    <div class="date-filters">
-                        <!-- Chart Type Toggle -->
-                        <div class="toggle-group" id="chart-type-toggle">
-                            <button class="toggle-btn active" data-type="bar" title="Latest Standings Bar">
-                                <i data-lucide="bar-chart-3"></i> Standings
+                </section>
+
+                <!-- Chart / Insights Section -->
+                <section class="chart-panel">
+                    <div class="chart-header">
+                        <div>
+                            <h2>Standings (Instagram)</h2>
+                            <span class="chart-subtitle">Tracking selected items: </span>
+                        </div>
+                        <!-- Chart Controls -->
+                        <div class="date-filters">
+                            <!-- Chart Type Toggle -->
+                            <div class="toggle-group" id="chart-type-toggle">
+                                <button class="toggle-btn active" data-type="bar" title="Latest Standings Bar">
+                                    <i data-lucide="bar-chart-3"></i> Standings
+                                </button>
+                                <button class="toggle-btn" data-type="line" title="Growth Trend Line">
+                                    <i data-lucide="trending-up"></i> Trend
+                                </button>
+                            </div>
+                            
+                            <!-- Platform Filter Icons -->
+                            <div class="platform-icons-row" id="platform-filter-row">
+                                <button class="platform-icon-btn" data-platform="all" title="All Platforms" style="display: none; font-size: 11px; font-weight: 800; font-family: var(--font-primary);">ALL</button>
+                                <button class="platform-icon-btn active" data-platform="instagram" title="Instagram">
+                                    <svg viewBox="0 0 448 512"><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg>
+                                </button>
+                                <button class="platform-icon-btn" data-platform="x" title="X (Twitter)">
+                                    <svg viewBox="0 0 512 512"><path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"/></svg>
+                                </button>
+                                <button class="platform-icon-btn" data-platform="facebook" title="Facebook">
+                                    <svg viewBox="0 0 512 512"><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/></svg>
+                                </button>
+                                <button class="platform-icon-btn" data-platform="tiktok" title="TikTok">
+                                    <svg viewBox="0 0 448 512"><path d="M448 209.91a210.06 210.06 0 0 1-122.77-39.25v178.72A162.55 162.55 0 1 1 185 188.31v89.89a72.69 72.69 0 1 0 72.23 72.42V0h90.87a208.87 208.87 0 0 0 41 93.9 208.56 208.56 0 0 0 58.9 51.6z"/></svg>
+                                </button>
+                            </div>
+                            <div class="date-select-wrapper" id="start-date-wrapper" style="opacity: 0.3; pointer-events: none;">
+                                <label for="start-date-select">From:</label>
+                                <select id="start-date-select"></select>
+                            </div>
+                            <div class="date-select-wrapper" id="end-date-wrapper" style="opacity: 0.3; pointer-events: none;">
+                                <label for="end-date-select">To:</label>
+                                <select id="end-date-select"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- Search Panel (below Chart Panel) -->
+                <section class="search-panel" style="margin-bottom: 30px; display: flex; justify-content: flex-start;">
+                    <div class="search-box">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="search-input" placeholder="Search...">
+                    </div>
+                </section>
+
+                <!-- Official Group Channels Section -->
+                <section class="grid-section group-section" id="group-section" style="margin-bottom: 40px;">
+                    <div class="section-title-bar">
+                        <h2><i data-lucide="shield-check"></i> Official Group Channels</h2>
+                        <div class="directory-filters">
+                            <!-- Group Filter for Groups Page -->
+                            <div class="filter-dropdown">
+                                <label for="group-filter-select-group-tab">Group:</label>
+                                <select id="group-filter-select-group-tab">
+                                    <option value="all">All Groups</option>
+                                    <option value="Sora! Sora!">Sora! Sora!</option>
+                                    <option value="Yami Yami">Yami Yami</option>
+                                    <option value="Mirai Mirai">Mirai Mirai</option>
+                                    <option value="Dream:0n">Dream:0n</option>
+                                    <option value="Nox:0ff">Nox:0ff</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Selection Controls for Groups -->
+                            <button id="group-select-all-btn" class="select-all-btn">
+                                <i data-lucide="check-square"></i> Select All
                             </button>
-                            <button class="toggle-btn" data-type="line" title="Growth Trend Line">
-                                <i data-lucide="trending-up"></i> Trend
+                            <button id="group-clear-selection-btn" class="clear-btn" style="display: none;">
+                                <i data-lucide="x-circle"></i> Clear Selection
                             </button>
                         </div>
+                    </div>
+                    <div class="cards-grid" id="group-cards-container">
+                        <!-- Dynamic Group Cards Inserted Here -->
+                    </div>
+                </section>
+
+                <!-- Card Grid -->
+                <section class="grid-section" id="members-section">
+                    <div class="section-title-bar">
+                        <h2><i data-lucide="layout-grid"></i> Members Directory <span class="members-count" id="members-count">40 Idols</span></h2>
                         
-                        <!-- Platform Filter Icons -->
-                        <div class="platform-icons-row" id="platform-filter-row">
-                            <button class="platform-icon-btn" data-platform="all" title="All Platforms" style="display: none; font-size: 11px; font-weight: 800; font-family: var(--font-primary);">ALL</button>
-                            <button class="platform-icon-btn active" data-platform="instagram" title="Instagram">
-                                <svg viewBox="0 0 448 512"><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg>
+                        <div class="directory-filters">
+                            <!-- Group Filter -->
+                            <div class="filter-dropdown">
+                                <label for="group-filter-select">Group:</label>
+                                <select id="group-filter-select">
+                                    <option value="all">All Groups</option>
+                                    <option value="Sora! Sora!">Sora! Sora!</option>
+                                    <option value="Yami Yami">Yami Yami</option>
+                                    <option value="Mirai Mirai">Mirai Mirai</option>
+                                    <option value="Dream:0n">Dream:0n</option>
+                                    <option value="Nox:0ff">Nox:0ff</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Color Filter -->
+                            <div class="filter-dropdown">
+                                <label for="color-filter-select">Color:</label>
+                                <select id="color-filter-select">
+                                    <option value="all">All Colors</option>
+                                    <option value="Red">Red</option>
+                                    <option value="Pink">Pink</option>
+                                    <option value="Yellow">Yellow</option>
+                                    <option value="Green">Green</option>
+                                    <option value="White">White</option>
+                                    <option value="Blue">Blue</option>
+                                    <option value="Purple">Purple</option>
+                                    <option value="Black">Black</option>
+                                    <option value="Orange">Orange</option>
+                                </select>
+                            </div>
+
+                            <!-- Sort Selector -->
+                            <div class="filter-dropdown">
+                                <label for="sort-select">Sort By:</label>
+                                <select id="sort-select">
+                                    <option value="name">Member Name</option>
+                                    <option value="group">Group Name</option>
+                                    <option value="color">Member Color</option>
+                                    <option value="instagram">Instagram</option>
+                                    <option value="x">X (Twitter)</option>
+                                    <option value="facebook">Facebook</option>
+                                    <option value="tiktok">TikTok</option>
+                                </select>
+                            </div>
+
+                            <!-- Selection Controls -->
+                            <button id="select-top-10-btn" class="select-all-btn" style="background: rgba(0, 122, 255, 0.1); border-color: rgba(0, 122, 255, 0.2); color: #007AFF;">
+                                <i data-lucide="award"></i> Select Top 10
                             </button>
-                            <button class="platform-icon-btn" data-platform="x" title="X (Twitter)">
-                                <svg viewBox="0 0 512 512"><path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"/></svg>
+                            <button id="select-all-btn" class="select-all-btn">
+                                <i data-lucide="check-square"></i> Select All
                             </button>
-                            <button class="platform-icon-btn" data-platform="facebook" title="Facebook">
-                                <svg viewBox="0 0 512 512"><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/></svg>
+                            <button id="clear-selection-btn" class="clear-btn" style="display: none;">
+                                <i data-lucide="x-circle"></i> Clear Selection
                             </button>
-                            <button class="platform-icon-btn" data-platform="tiktok" title="TikTok">
-                                <svg viewBox="0 0 448 512"><path d="M448 209.91a210.06 210.06 0 0 1-122.77-39.25v178.72A162.55 162.55 0 1 1 185 188.31v89.89a72.69 72.69 0 1 0 72.23 72.42V0h90.87a208.87 208.87 0 0 0 41 93.9 208.56 208.56 0 0 0 58.9 51.6z"/></svg>
-                            </button>
-                        </div>
-                        <div class="date-select-wrapper" id="start-date-wrapper" style="opacity: 0.3; pointer-events: none;">
-                            <label for="start-date-select">From:</label>
-                            <select id="start-date-select"></select>
-                        </div>
-                        <div class="date-select-wrapper" id="end-date-wrapper" style="opacity: 0.3; pointer-events: none;">
-                            <label for="end-date-select">To:</label>
-                            <select id="end-date-select"></select>
                         </div>
                     </div>
-                </div>
-                <div class="chart-wrapper">
-                    <canvas id="growthChart"></canvas>
-                </div>
-            </section>
-
-            <!-- Search Panel (below Chart Panel) -->
-            <section class="search-panel" style="margin-bottom: 30px; display: flex; justify-content: flex-start;">
-                <div class="search-box">
-                    <i data-lucide="search" class="search-icon"></i>
-                    <input type="text" id="search-input" placeholder="Search...">
-                </div>
-            </section>
-
-            <!-- Official Group Channels Section -->
-            <section class="grid-section group-section" id="group-section" style="margin-bottom: 40px;">
-                <div class="section-title-bar">
-                    <h2><i data-lucide="shield-check"></i> Official Group Channels</h2>
-                    <div class="directory-filters">
-                        <!-- Group Filter for Groups Page -->
-                        <div class="filter-dropdown">
-                            <label for="group-filter-select-group-tab">Group:</label>
-                            <select id="group-filter-select-group-tab">
-                                <option value="all">All Groups</option>
-                                <option value="Sora! Sora!">Sora! Sora!</option>
-                                <option value="Yami Yami">Yami Yami</option>
-                                <option value="Mirai Mirai">Mirai Mirai</option>
-                                <option value="Dream:0n">Dream:0n</option>
-                                <option value="Nox:0ff">Nox:0ff</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Selection Controls for Groups -->
-                        <button id="group-select-all-btn" class="select-all-btn">
-                            <i data-lucide="check-square"></i> Select All
-                        </button>
-                        <button id="group-clear-selection-btn" class="clear-btn" style="display: none;">
-                            <i data-lucide="x-circle"></i> Clear Selection
-                        </button>
+                    <div class="cards-grid" id="cards-container">
+                        <!-- Dynamic Member Cards Inserted Here -->
                     </div>
-                </div>
-                <div class="cards-grid" id="group-cards-container">
-                    <!-- Dynamic Group Cards Inserted Here -->
-                </div>
-            </section>
+                </section>
+            </div>
 
-            <!-- Card Grid -->
-            <section class="grid-section" id="members-section">
-                <div class="section-title-bar">
-                    <h2><i data-lucide="layout-grid"></i> Members Directory <span class="members-count" id="members-count">40 Idols</span></h2>
-                    
-                    <div class="directory-filters">
-                        <!-- Group Filter -->
-                        <div class="filter-dropdown">
-                            <label for="group-filter-select">Group:</label>
-                            <select id="group-filter-select">
-                                <option value="all">All Groups</option>
-                                <option value="Sora! Sora!">Sora! Sora!</option>
-                                <option value="Yami Yami">Yami Yami</option>
-                                <option value="Mirai Mirai">Mirai Mirai</option>
-                                <option value="Dream:0n">Dream:0n</option>
-                                <option value="Nox:0ff">Nox:0ff</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Color Filter -->
-                        <div class="filter-dropdown">
-                            <label for="color-filter-select">Color:</label>
-                            <select id="color-filter-select">
-                                <option value="all">All Colors</option>
-                                <option value="Red">Red</option>
-                                <option value="Pink">Pink</option>
-                                <option value="Yellow">Yellow</option>
-                                <option value="Green">Green</option>
-                                <option value="White">White</option>
-                                <option value="Blue">Blue</option>
-                                <option value="Purple">Purple</option>
-                                <option value="Black">Black</option>
-                                <option value="Orange">Orange</option>
-                            </select>
-                        </div>
-
-                        <!-- Sort Selector -->
-                        <div class="filter-dropdown">
-                            <label for="sort-select">Sort By:</label>
-                            <select id="sort-select">
-                                <option value="name">Member Name</option>
-                                <option value="group">Group Name</option>
-                                <option value="color">Member Color</option>
-                                <option value="instagram">Instagram</option>
-                                <option value="x">X (Twitter)</option>
-                                <option value="facebook">Facebook</option>
-                                <option value="tiktok">TikTok</option>
-                            </select>
-                        </div>
-
-                        <!-- Selection Controls -->
-                        <button id="select-top-10-btn" class="select-all-btn" style="background: rgba(0, 122, 255, 0.1); border-color: rgba(0, 122, 255, 0.2); color: #007AFF;">
-                            <i data-lucide="award"></i> Select Top 10
-                        </button>
-                        <button id="select-all-btn" class="select-all-btn">
-                            <i data-lucide="check-square"></i> Select All
-                        </button>
-                        <button id="clear-selection-btn" class="clear-btn" style="display: none;">
-                            <i data-lucide="x-circle"></i> Clear Selection
-                        </button>
+            <!-- Agency Tab Section -->
+            <div id="agency-tab-section" class="tab-section-content" style="display: none;">
+                <section class="grid-section">
+                    <div class="section-title-bar" style="margin-bottom: 24px;">
+                        <h2><i data-lucide="building-2" class="glow-icon"></i> Agency / Company Directory</h2>
                     </div>
-                </div>
-                <div class="cards-grid" id="cards-container">
-                    <!-- Dynamic Member Cards Inserted Here -->
-                </div>
-            </section>
+                    <div class="search-panel" style="margin-bottom: 24px; display: flex; justify-content: flex-start;">
+                        <div class="search-box">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="agency-search-input" placeholder="Search agencies...">
+                        </div>
+                    </div>
+                    <div class="directory-list-container">
+                        <table class="directory-table">
+                            <thead>
+                                <tr>
+                                    <th>Agency Name</th>
+                                    <th>Groups Count</th>
+                                    <th>Members Count</th>
+                                    <th>Total Follower Reach</th>
+                                </tr>
+                            </thead>
+                            <tbody id="agency-directory-body">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Group Tab Section -->
+            <div id="group-tab-section" class="tab-section-content" style="display: none;">
+                <section class="grid-section">
+                    <div class="section-title-bar" style="margin-bottom: 24px;">
+                        <h2><i data-lucide="users" class="glow-icon"></i> Groups Directory</h2>
+                        <div class="directory-filters">
+                            <div class="filter-dropdown">
+                                <label for="group-tab-agency-filter">Agency:</label>
+                                <select id="group-tab-agency-filter">
+                                    <option value="all">All Agencies</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="search-panel" style="margin-bottom: 24px; display: flex; justify-content: flex-start;">
+                        <div class="search-box">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="group-search-input" placeholder="Search groups...">
+                        </div>
+                    </div>
+                    <div class="directory-list-container">
+                        <table class="directory-table">
+                            <thead>
+                                <tr>
+                                    <th>Group Name</th>
+                                    <th>Company (Agency)</th>
+                                    <th>Members Count</th>
+                                    <th>Debut Date</th>
+                                    <th>Total Followers</th>
+                                </tr>
+                            </thead>
+                            <tbody id="group-directory-body">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Member Tab Section -->
+            <div id="member-tab-section" class="tab-section-content" style="display: none;">
+                <section class="grid-section">
+                    <div class="section-title-bar" style="margin-bottom: 24px;">
+                        <h2><i data-lucide="user" class="glow-icon"></i> Members Directory</h2>
+                        <div class="directory-filters">
+                            <div class="filter-dropdown">
+                                <label for="member-tab-group-filter">Group:</label>
+                                <select id="member-tab-group-filter">
+                                    <option value="all">All Groups</option>
+                                </select>
+                            </div>
+                            <div class="filter-dropdown">
+                                <label for="member-tab-agency-filter">Agency:</label>
+                                <select id="member-tab-agency-filter">
+                                    <option value="all">All Agencies</option>
+                                </select>
+                            </div>
+                            <div class="filter-dropdown">
+                                <label for="member-tab-color-filter">Color:</label>
+                                <select id="member-tab-color-filter">
+                                    <option value="all">All Colors</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="search-panel" style="margin-bottom: 24px; display: flex; justify-content: flex-start;">
+                        <div class="search-box">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="member-search-input" placeholder="Search members...">
+                        </div>
+                    </div>
+                    <div class="directory-list-container">
+                        <table class="directory-table">
+                            <thead>
+                                <tr>
+                                    <th>Member Name</th>
+                                    <th>Group</th>
+                                    <th>Company (Agency)</th>
+                                    <th>Color</th>
+                                    <th>Total Followers</th>
+                                    <th>Instagram</th>
+                                    <th>X (Twitter)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="member-directory-body">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Color Tab Section -->
+            <div id="color-tab-section" class="tab-section-content" style="display: none;">
+                <section class="grid-section">
+                    <div class="section-title-bar" style="margin-bottom: 24px;">
+                        <h2><i data-lucide="palette" class="glow-icon"></i> Members by Theme Color</h2>
+                        <div class="directory-filters">
+                            <div class="filter-dropdown">
+                                <label for="color-tab-group-filter">Group:</label>
+                                <select id="color-tab-group-filter">
+                                    <option value="all">All Groups</option>
+                                </select>
+                            </div>
+                            <div class="filter-dropdown">
+                                <label for="color-tab-agency-filter">Agency:</label>
+                                <select id="color-tab-agency-filter">
+                                    <option value="all">All Agencies</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="search-panel" style="margin-bottom: 24px; display: flex; justify-content: flex-start;">
+                        <div class="search-box">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="color-search-input" placeholder="Search members by name...">
+                        </div>
+                    </div>
+                    <div class="colors-grouped-container" id="colors-grouped-wrapper">
+                        <!-- Dynamic color groups containing lists of member cards -->
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
 

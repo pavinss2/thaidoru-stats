@@ -168,9 +168,18 @@ function renderProfilePanel() {
         : `<a href="profile.html?name=${encodeURIComponent(memberProfile.group)}" class="group-badge-link" style="text-decoration:none;"><span class="group-badge" style="background: rgba(255,255,255,0.06); font-size: 11px; padding: 4px 10px; border-radius: 8px; cursor: pointer; transition: var(--transition-smooth);">${memberProfile.group}</span></a>`;
         
     // Metadata Details
-    document.getElementById("profile-group-val").innerText = isGroup ? name : memberProfile.group;
-    document.getElementById("profile-agency-val").innerText = memberProfile.agency || "Catsolute";
-    document.getElementById("profile-color-val").innerText = memberProfile.color || "None";
+    const groupName = isGroup ? name : memberProfile.group;
+    document.getElementById("profile-group-val").innerHTML = `<a href="profile.html?name=${encodeURIComponent(groupName)}">${groupName}</a>`;
+    
+    const agencyName = memberProfile.agency || "Catsolute";
+    document.getElementById("profile-agency-val").innerHTML = `<a href="agency.html?name=${encodeURIComponent(agencyName)}">${agencyName}</a>`;
+    
+    const colorName = memberProfile.color || "None";
+    if (memberProfile.color) {
+        document.getElementById("profile-color-val").innerHTML = `<a href="index.html?view=color#${encodeURIComponent(colorName)}">${colorName}</a>`;
+    } else {
+        document.getElementById("profile-color-val").innerText = "None";
+    }
     
     // Debut date
     const debutItem = document.getElementById("profile-debut-item");

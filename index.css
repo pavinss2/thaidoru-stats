@@ -1194,4 +1194,145 @@ a.platform-metric:hover {
     transform: scale(1.02);
 }
 
+/* ==========================================
+   Top Navigation Tabs System
+   ========================================== */
+.top-nav-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 25px;
+    background: rgba(20, 20, 25, 0.4);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 8px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    overflow-x: auto;
+}
+
+.nav-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 10px 20px;
+    color: var(--text-secondary);
+    font-family: var(--font-primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    white-space: nowrap;
+}
+
+.nav-tab i {
+    width: 16px;
+    height: 16px;
+}
+
+.nav-tab:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.nav-tab.active {
+    color: white;
+    background: linear-gradient(135deg, rgba(157, 77, 255, 0.15), rgba(0, 122, 255, 0.15));
+    border-color: rgba(157, 77, 255, 0.3);
+    box-shadow: 0 0 15px rgba(157, 77, 255, 0.15);
+}
+
+/* ==========================================
+   Directory Lists & Tables
+   ========================================== */
+.directory-list-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    overflow-x: auto;
+    margin-top: 15px;
+}
+
+.directory-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-family: var(--font-primary);
+}
+
+.directory-table th {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.directory-table td {
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+    font-size: 14px;
+    vertical-align: middle;
+    transition: var(--transition-smooth);
+}
+
+.directory-table tr {
+    transition: var(--transition-smooth);
+}
+
+.directory-table tbody tr:hover td {
+    color: white;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.directory-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ==========================================
+   Detail redirects styling
+   ========================================== */
+.profile-meta-value a {
+    color: var(--text-primary) !important;
+    text-decoration: none !important;
+    border-bottom: 1.5px dashed rgba(255, 255, 255, 0.2);
+    padding-bottom: 2px;
+    transition: var(--transition-smooth);
+}
+
+.profile-meta-value a:hover {
+    color: var(--accent-purple) !important;
+    border-bottom-color: var(--accent-purple);
+    text-shadow: 0 0 8px rgba(157, 77, 255, 0.4);
+}
+
+/* Deep link scroll target pulse effect */
+.highlight-pulse {
+    animation: pulseGlow 2.5s ease-in-out;
+}
+
+@keyframes pulseGlow {
+    0% {
+        border-color: var(--border-color);
+        box-shadow: none;
+    }
+    30% {
+        border-color: var(--accent-purple);
+        box-shadow: 0 0 20px rgba(157, 77, 255, 0.35);
+        background: rgba(157, 77, 255, 0.05);
+    }
+    100% {
+        border-color: var(--border-color);
+        box-shadow: none;
+    }
+}
+
 

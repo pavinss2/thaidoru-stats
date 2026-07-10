@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agency Profile - THAIDORU STATS</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239D4DFF%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%2223 6 13.5 15.5 8.5 10.5 1 18%22></polyline><polyline points=%2217 6 23 6 23 12%22></polyline></svg>">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@0.300.0"></script>
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="index.css">
+    
+    <!-- Vercel Web Analytics -->
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    
+    <!-- Vercel Speed Insights -->
+    <script>
+      window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
+</head>
+<body>
+    <!-- Glow Backdrops -->
+    <div class="glow-bg glow-1"></div>
+    <div class="glow-bg glow-2"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <a href="index.html" class="home-btn" title="Back to Dashboard">
+                    <i data-lucide="home"></i>
+                </a>
+                <div style="margin-left: 15px;">
+                    <h1 id="header-agency-title">Loading...</h1>
+                    <p class="subtitle" style="margin: 0;">Agency Profile & Roster</p>
+                </div>
+            </div>
+            
+            <!-- Global Autocomplete Searchbar -->
+            <div class="global-search-container">
+                <div class="search-input-wrapper">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="global-search-input" placeholder="Search members or groups..." autocomplete="off">
+                </div>
+                <div class="search-suggestions-box" id="search-suggestions"></div>
+            </div>
+        </header>
+
+        <!-- Profile Workspace Layout Grid -->
+        <div class="profile-layout">
+            
+            <!-- Sidebar: Agency Summary Card -->
+            <aside class="profile-sidebar" id="agency-card">
+                <div class="profile-avatar-large" id="agency-avatar">
+                    <i data-lucide="building-2" style="width: 48px; height: 48px; color: var(--accent-purple);"></i>
+                </div>
+                
+                <div class="profile-title-row">
+                    <h2 class="profile-name" id="agency-name">
+                        Loading...
+                    </h2>
+                </div>
+                
+                <div class="profile-badge-row">
+                    <span class="badge-official" style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue)); color: white; border: none; font-weight: 700; box-shadow: 0 0 10px rgba(157, 77, 255, 0.3);">OFFICIAL PARTNER</span>
+                </div>
+                
+                <!-- Metadata items -->
+                <div class="profile-meta-grid">
+                    <div class="profile-meta-item">
+                        <span class="profile-meta-label">Total Groups:</span>
+                        <span class="profile-meta-value" id="agency-groups-val">-</span>
+                    </div>
+                    <div class="profile-meta-item">
+                        <span class="profile-meta-label">Total Members:</span>
+                        <span class="profile-meta-value" id="agency-members-val">-</span>
+                    </div>
+                    <div class="profile-meta-item">
+                        <span class="profile-meta-label">Total Followers:</span>
+                        <span class="profile-meta-value" id="agency-followers-val">-</span>
+                    </div>
+                </div>
+
+                <!-- Agency Roster List Container -->
+                <div id="agency-roster-container" style="width: 100%; border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 20px;">
+                    <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: white;">Agency Members</h3>
+                    <div id="agency-roster-list" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                        <!-- Dynamically populated in agency.js -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Groups List Grid Container -->
+            <main class="main-content" style="padding: 0;">
+                <section class="grid-section" style="margin-bottom: 40px;">
+                    <div class="section-title-bar" style="margin-bottom: 24px;">
+                        <h2><i data-lucide="shield-check" class="glow-icon"></i> Groups under this Agency</h2>
+                    </div>
+                    <div class="cards-grid" id="agency-groups-container">
+                        <!-- Dynamic Group Cards Inserted Here -->
+                    </div>
+                </section>
+            </main>
+            
+        </div>
+    </div>
+
+    <!-- Script Entrypoint -->
+    <script src="agency.js"></script>
+    <script>
+        // Init icon scripts
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
