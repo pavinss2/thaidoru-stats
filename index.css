@@ -98,6 +98,12 @@ body {
     align-items: center;
     justify-content: center;
     box-shadow: 0 0 12px rgba(157, 77, 255, 0.4);
+    transition: var(--transition-smooth);
+}
+
+a:hover .logo-box {
+    transform: translateY(-1px);
+    box-shadow: 0 0 16px rgba(157, 77, 255, 0.6);
 }
 
 .logo-box i {
