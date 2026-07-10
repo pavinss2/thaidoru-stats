@@ -118,6 +118,15 @@ function resolveColor(c) {
 }
 
 function renderAgencyPage() {
+    // Set active class on nav tab
+    document.querySelectorAll(".nav-tab").forEach(tab => {
+        if (tab.getAttribute("data-tab") === "agency") {
+            tab.classList.add("active");
+        } else {
+            tab.classList.remove("active");
+        }
+    });
+
     // Normalise and filter
     const agencyNameNorm = selectedAgencyName.toLowerCase();
     const agencyGroups = idolsList.filter(i => i.type === "group" && i.agency && i.agency.toLowerCase() === agencyNameNorm);

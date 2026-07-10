@@ -1225,6 +1225,7 @@ a.platform-metric:hover {
     cursor: pointer;
     transition: var(--transition-smooth);
     white-space: nowrap;
+    text-decoration: none;
 }
 
 .nav-tab i {

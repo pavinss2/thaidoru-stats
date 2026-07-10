@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const urlParams = new URLSearchParams(window.location.search);
         const viewParam = urlParams.get("view");
         if (viewParam) {
-            switchTab(viewParam, false);
+            switchTab(viewParam);
         }
     })
     .catch(err => {
@@ -1189,15 +1189,6 @@ document.addEventListener("click", () => {
 // Top Navigation Tab System
 // ==========================================
 function setupTabs() {
-    // Tab click handlers
-    const tabs = document.querySelectorAll(".nav-tab");
-    tabs.forEach(tab => {
-        tab.addEventListener("click", () => {
-            const tabId = tab.getAttribute("data-tab");
-            switchTab(tabId);
-        });
-    });
-
     // Agency Tab Search
     const agencySearch = document.getElementById("agency-search-input");
     if (agencySearch) {
@@ -1277,7 +1268,7 @@ function setupTabs() {
     }
 }
 
-function switchTab(tabId, updateUrl = true) {
+function switchTab(tabId) {
     activeTab = tabId;
     
     // Switch active nav buttons
@@ -1324,11 +1315,6 @@ function switchTab(tabId, updateUrl = true) {
                 }
             }, 300);
         }
-    }
-
-    if (updateUrl && window.history.pushState) {
-        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?view=" + tabId + window.location.hash;
-        window.history.pushState({ path: newUrl }, "", newUrl);
     }
 }
 

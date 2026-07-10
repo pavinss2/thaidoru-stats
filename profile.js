@@ -132,8 +132,19 @@ function parseCSV(text) {
 function renderProfilePanel() {
     const name = memberProfile.name;
     const isGroup = memberProfile.type === "group";
+    // Set active class on nav tab
+    document.querySelectorAll(".nav-tab").forEach(tab => {
+        if (isGroup && tab.getAttribute("data-tab") === "group") {
+            tab.classList.add("active");
+        } else if (!isGroup && tab.getAttribute("data-tab") === "member") {
+            tab.classList.add("active");
+        } else {
+            tab.classList.remove("active");
+        }
+    });
+
     const groupColor = resolveColor(memberProfile.color || "purple");
-    
+
     // Set colors
     const sidebar = document.getElementById("profile-card");
     sidebar.style.setProperty("--member-color", groupColor);
