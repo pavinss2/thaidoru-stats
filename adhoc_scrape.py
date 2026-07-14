@@ -1,14 +1,63 @@
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import sys
 import argparse
 
+def sync_postgres_to_csv(postgres_url, csv_path):
+    print(f"Connecting to PostgreSQL database to sync records to {csv_path}...")
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+    import csv
+
+    try:
+        conn = psycopg2.connect(postgres_url)
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute("""
+            SELECT 
+                to_char(date, 'YYYY-MM-DD') as "Date", 
+                coalesce(to_char(timestamp, 'HH24:MI:SS'), '') as "Timestamp", 
+                idol_name as "Idol_Name", 
+                platform as "Platform", 
+                username as "Username", 
+                follower_count as "Follower_Count"
+            FROM follower_history 
+            ORDER BY date ASC, idol_name ASC, platform ASC;
+        """)
+        rows = cursor.fetchall()
+        
+        headers = ["Date", "Timestamp", "Idol_Name", "Platform", "Username", "Follower_Count"]
+        with open(csv_path, 'w', encoding='utf-8', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(headers)
+            for row in rows:
+                writer.writerow([
+                    row["Date"],
+                    row["Timestamp"],
+                    row["Idol_Name"],
+                    row["Platform"],
+                    row["Username"],
+                    str(row["Follower_Count"])
+                ])
+                
+        print(f"Successfully synced {len(rows)} records to {csv_path}.")
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("Error syncing database to CSV:", e)
+        sys.exit(1)
+
 def main():
     parser = argparse.ArgumentParser(description="Adhoc scraper to update specific idols/members directly in Neon PostgreSQL.")
-    parser.add_argument("names", nargs="+", help="Names of the idols/members to scrape (e.g. Best Pin Praew).")
+    parser.add_argument("names", nargs="*", help="Names of the idols/members to scrape (e.g. Best Pin Praew).")
     parser.add_argument("--config", default="idols.json", help="Path to config JSON (default: idols.json).")
+    parser.add_argument("--platform", default=None, help="Filter adhoc scrape to a specific platform (e.g. Instagram, TikTok, X, Facebook).")
+    parser.add_argument("--sync-csv", action="store_true", help="Sync all records from PostgreSQL database back to follower_history.csv.")
     args = parser.parse_args()
+
+    if not args.names and not args.sync_csv:
+        parser.print_help()
+        sys.exit(1)
 
     # 1. Load env variables from .env.local
     env_path = ".env.local"
@@ -31,6 +80,12 @@ def main():
         print("Error: POSTGRES_URL environment variable is not set and could not be loaded from .env.local.")
         sys.exit(1)
 
+    # Handle standalone CSV sync
+    if args.sync_csv and not args.names:
+        sync_postgres_to_csv(postgres_url, "follower_history.csv")
+        print("Done!")
+        return
+
     # Load config
     if not os.path.exists(args.config):
         print(f"Error: Config file not found at '{args.config}'")
@@ -52,8 +107,12 @@ def main():
     # Import scraping actions
     from follower_scraper import scrape_instagram, scrape_tiktok, scrape_x, scrape_facebook, save_results_to_postgres, synthesize_missing_data_postgres
 
-    today_str = datetime.today().strftime('%Y-%m-%d')
-    now_time_str = datetime.today().strftime('%H:%M:%S')
+    TZ_BKK = timezone(timedelta(hours=7))
+    now = datetime.now(TZ_BKK)
+    today_str = now.strftime('%Y-%m-%d')
+    now_time_str = now.strftime('%H:%M:%S')
+
+    target_platform = args.platform.lower() if args.platform else None
 
     results = []
     for idol in targets:
@@ -62,7 +121,7 @@ def main():
         
         # Instagram
         ig = idol.get("instagram_handle")
-        if ig:
+        if ig and (not target_platform or target_platform == "instagram"):
             try:
                 print(f"  Instagram ({ig})...")
                 count = scrape_instagram(ig)
@@ -73,7 +132,7 @@ def main():
                 
         # TikTok
         tiktok = idol.get("tiktok_handle")
-        if tiktok:
+        if tiktok and (not target_platform or target_platform == "tiktok"):
             try:
                 print(f"  TikTok ({tiktok})...")
                 count = scrape_tiktok(tiktok)
@@ -84,7 +143,7 @@ def main():
 
         # X
         x = idol.get("x_handle")
-        if x:
+        if x and (not target_platform or target_platform == "x"):
             try:
                 print(f"  X ({x})...")
                 count = scrape_x(x)
@@ -95,7 +154,7 @@ def main():
 
         # Facebook
         fb = idol.get("facebook_page")
-        if fb:
+        if fb and (not target_platform or target_platform == "facebook"):
             try:
                 print(f"  Facebook ({fb})...")
                 count = scrape_facebook(fb)
@@ -110,6 +169,11 @@ def main():
             save_results_to_postgres(results, postgres_url)
             print("Running database linear interpolation...")
             synthesize_missing_data_postgres(postgres_url)
+            
+            # Sync to CSV if requested
+            if args.sync_csv:
+                sync_postgres_to_csv(postgres_url, "follower_history.csv")
+                
             print("Completed successfully!")
         except Exception as e:
             print("Error writing to database:", e)

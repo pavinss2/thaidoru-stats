@@ -131,12 +131,37 @@ python3 import_csv_to_postgres.py
 ```
 *(This script will automatically read credentials from your local `.env.local` file).*
 
-#### B. Run Targeted Adhoc Scraping for Specific Members
-To run the scraper on-demand for specific members (e.g., Best, Pin, Praew) and save their counts directly into your Neon PostgreSQL database:
+#### B. Run Targeted Adhoc Scraping & Syncing
+
+If specific members or platforms fail during the daily scrape runs, you can trigger an adhoc scrape on-demand to fetch counts, save them to the PostgreSQL database, and keep the local CSV fallback in sync.
+
+##### 1. Run Adhoc Scrapes
+You can pass a list of member names separated by spaces, with options to target specific platforms and write records back to the local `follower_history.csv`:
+
 ```bash
-python3 adhoc_scrape.py Best Pin Praew
+# Scrape all platforms for specific members
+python3 adhoc_scrape.py "Xiu Zhen" Ploy
+
+# Scrape ONLY a specific platform (e.g., Instagram) for specific members and sync results to CSV
+python3 adhoc_scrape.py "Xiu Zhen" Ploy Bowie Mii --platform Instagram --sync-csv
 ```
-You can pass any list of member names separated by spaces.
+
+##### 2. Standalone Database to CSV Sync
+To update or fully overwrite the local `follower_history.csv` backup to match all records in Neon PostgreSQL:
+```bash
+python3 adhoc_scrape.py --sync-csv
+```
+
+##### 3. Deploy Data & Sync to Production
+After updating the statistics, follow these steps to commit the updated history and trigger a production build/deployment:
+```bash
+# Staging and committing the updated CSV file
+git add follower_history.csv
+git commit -m "chore: update follower_history.csv with adhoc scraper results"
+
+# Push to remote (Vercel automatically redeploys static assets on push)
+git push origin main
+```
 
 ---
 
