@@ -51,8 +51,8 @@ def scrape_instagram_socialblade(username: str) -> int:
         'Accept-Language': 'en-US,en;q=0.9',
     }
     
-    # Stagger requests
-    time.sleep(random.uniform(0.2, 1.2))
+    # Stagger requests (20% slower to avoid rate limits)
+    time.sleep(random.uniform(0.24, 1.44))
     
     response = requests.get(url, headers=headers, timeout=10)
     # Even if 401, we try to parse it
@@ -75,34 +75,34 @@ def scrape_instagram_direct(handle: str) -> int:
     Crawls direct Instagram profile.
     """
     url = f"https://www.instagram.com/{handle}/"
-    # Introduce staggered start to spread concurrent requests
-    time.sleep(random.uniform(0.5, 2.5))
+    # Introduce staggered start to spread concurrent requests (20% slower to avoid rate limits)
+    time.sleep(random.uniform(0.6, 3.0))
     
     for attempt in range(3):
         try:
             response = requests.get(url, headers=GOOGLEBOT_HEADERS, timeout=15)
             if response.status_code != 200:
-                time.sleep(2)
+                time.sleep(2.4)
                 continue
                 
             soup = BeautifulSoup(response.text, 'html.parser')
             desc_tag = soup.find('meta', attrs={'name': 'description'}) or soup.find('meta', attrs={'property': 'og:description'})
             if not desc_tag or not desc_tag.get('content'):
-                time.sleep(2)
+                time.sleep(2.4)
                 continue
                 
             content = desc_tag['content']
             match = re.search(r'([\d\.,]+[MK]?)\s+Followers', content, re.IGNORECASE)
             if not match:
                 # If we got the login screen redirect page
-                time.sleep(2.5)
+                time.sleep(3.0)
                 continue
                 
             return clean_count_str(match.group(1))
         except Exception as e:
             if attempt == 2:
                 raise e
-            time.sleep(2)
+            time.sleep(2.4)
             
     raise ValueError("Instagram rate limit active (returned sign-in page) after 3 attempts")
 
@@ -113,7 +113,8 @@ def scrape_instagram_instastatistics_http(handle: str) -> int:
     for attempt in range(2):
         try:
             url_is = f"https://instastatistics.com/{handle}"
-            time.sleep(random.uniform(0.5, 1.5))
+            # 20% slower to avoid rate limits
+            time.sleep(random.uniform(0.6, 1.8))
             
             headers_is = {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -137,13 +138,13 @@ def scrape_instagram_instastatistics_http(handle: str) -> int:
                     return clean_count_str(match_raw.group(1))
                 
                 if attempt == 0:
-                    print(f"Instastatistics returned placeholder for {handle}. Waiting 4 seconds for cache generation...")
-                    time.sleep(4)
+                    print(f"Instastatistics returned placeholder for {handle}. Waiting 4.8 seconds for cache generation...")
+                    time.sleep(4.8)
                     continue
         except Exception as e:
             if attempt == 1:
                 raise e
-            time.sleep(2)
+            time.sleep(2.4)
             
     raise ValueError("Instastatistics exact count not found in description meta")
 
@@ -188,11 +189,11 @@ def scrape_instagram_instastatistics_playwright(handle: str, browser=None) -> in
         
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=20000)
-            # Wait up to 6 seconds to capture the background api polling
+            # Wait up to 7.2 seconds to capture the background api polling (20% slower)
             for _ in range(12):
                 if followers_count is not None:
                     break
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(600)
         finally:
             context.close()
             
@@ -246,8 +247,8 @@ def scrape_facebook_socialblade(page_name: str) -> int:
         'Accept-Language': 'en-US,en;q=0.9',
     }
     
-    # Stagger requests
-    time.sleep(random.uniform(0.2, 1.2))
+    # Stagger requests (20% slower to avoid rate limits)
+    time.sleep(random.uniform(0.24, 1.44))
     
     response = requests.get(url, headers=headers, timeout=10)
     if response.status_code == 200:
@@ -281,8 +282,8 @@ def scrape_facebook(page_name: str) -> int:
 
     url = f"https://www.facebook.com/{page_name}"
     
-    # Stagger requests
-    time.sleep(random.uniform(0.2, 1.2))
+    # Stagger requests (20% slower to avoid rate limits)
+    time.sleep(random.uniform(0.24, 1.44))
     
     response = requests.get(url, headers=GOOGLEBOT_HEADERS, timeout=15)
     if response.status_code != 200:
@@ -309,8 +310,8 @@ def scrape_x_and_avatar(handle: str) -> tuple:
     """
     url = f"https://x.com/{handle}"
     
-    # Stagger requests
-    time.sleep(random.uniform(0.2, 1.2))
+    # Stagger requests (20% slower to avoid rate limits)
+    time.sleep(random.uniform(0.24, 1.44))
     
     response = requests.get(url, headers=CHROME_HEADERS, timeout=15)
     if response.status_code != 200:
@@ -365,7 +366,7 @@ def scrape_tiktok(handle: str, browser=None) -> int:
             if response and response.status != 200:
                 raise ValueError(f"TikTok returned status code {response.status}")
                 
-            page.wait_for_timeout(3000) # Let Javascript execute
+            page.wait_for_timeout(3600) # Let Javascript execute (20% slower)
             
             html = page.content()
             
@@ -787,15 +788,38 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
         run_http = target_platform is None or target_platform.lower() in ("x", "instagram", "facebook")
         http_truly_failed = []  # Channels with no backup and failed scrape
         if run_http:
-            print("\nRunning X, Instagram, and Facebook scrapers concurrently...")
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                futures = {executor.submit(scrape_idol_http_channels, idol, today_backups, target_platform): idol for idol in active_idols}
-                for future in as_completed(futures):
-                    idol_name, local_res, alerts, truly_failed_channels = future.result()
-                    all_alerts.extend(alerts)
-                    http_truly_failed.extend(truly_failed_channels)
-                    for res in local_res:
-                        results.append((today_str, now_time_str, idol_name, res[0], res[1], res[2]))
+            mid = len(active_idols) // 2
+            batch1 = active_idols[:mid]
+            batch2 = active_idols[mid:]
+            
+            print(f"\nRunning X, Instagram, and Facebook scrapers in two batches: Batch 1 ({len(batch1)}), Batch 2 ({len(batch2)})...")
+            
+            # Batch 1
+            if batch1:
+                print(f"Processing Batch 1 of {len(batch1)} accounts...")
+                with ThreadPoolExecutor(max_workers=10) as executor:
+                    futures1 = {executor.submit(scrape_idol_http_channels, idol, today_backups, target_platform): idol for idol in batch1}
+                    for future in as_completed(futures1):
+                        idol_name, local_res, alerts, truly_failed_channels = future.result()
+                        all_alerts.extend(alerts)
+                        http_truly_failed.extend(truly_failed_channels)
+                        for res in local_res:
+                            results.append((today_str, now_time_str, idol_name, res[0], res[1], res[2]))
+            
+            # 2-minute gap
+            if batch2:
+                print("Waiting 2 minutes (120 seconds) before processing Batch 2...")
+                time.sleep(120)
+                
+                print(f"Processing Batch 2 of {len(batch2)} accounts...")
+                with ThreadPoolExecutor(max_workers=10) as executor:
+                    futures2 = {executor.submit(scrape_idol_http_channels, idol, today_backups, target_platform): idol for idol in batch2}
+                    for future in as_completed(futures2):
+                        idol_name, local_res, alerts, truly_failed_channels = future.result()
+                        all_alerts.extend(alerts)
+                        http_truly_failed.extend(truly_failed_channels)
+                        for res in local_res:
+                            results.append((today_str, now_time_str, idol_name, res[0], res[1], res[2]))
                     
         # 2. Run Playwright fallback for failed Instagram channels & TikTok scraping
         failed_ig_channels = [ch for ch in http_truly_failed if ch[1].lower() == "instagram"]
@@ -838,7 +862,14 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
                 # B. Scrape TikTok profiles
                 if run_tiktok:
                     print("\nScraping TikTok profiles using Playwright...")
-                    for idol in active_idols:
+                    mid_tt = len(active_idols) // 2
+                    tt_batch1 = active_idols[:mid_tt]
+                    tt_batch2 = active_idols[mid_tt:]
+                    
+                    print(f"Running TikTok scraper in two batches: Batch 1 ({len(tt_batch1)}), Batch 2 ({len(tt_batch2)})...")
+                    
+                    # Batch 1
+                    for idol in tt_batch1:
                         name = idol.get("name")
                         tiktok_handle = idol.get("tiktok_handle")
                         if tiktok_handle:
@@ -859,6 +890,34 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
                                 else:
                                     if "429" in err_msg or "blocked" in err_msg.lower():
                                         all_alerts.append(f"::warning:: Blocked by TikTok while scraping {name} ({tiktok_handle})")
+                                        
+                    # 2-minute gap
+                    if tt_batch2:
+                        print("Waiting 2 minutes (120 seconds) before processing TikTok Batch 2...")
+                        time.sleep(120)
+                        
+                        # Batch 2
+                        for idol in tt_batch2:
+                            name = idol.get("name")
+                            tiktok_handle = idol.get("tiktok_handle")
+                            if tiktok_handle:
+                                backup_val = today_backups.get((name, "TikTok"))
+                                print(f"  TikTok ({tiktok_handle})...")
+                                try:
+                                    followers = scrape_tiktok(tiktok_handle, browser=browser_instance)
+                                    if followers == 0 and backup_val is not None:
+                                        print(f"Scraped 0 for {name} (TikTok), using backup: {backup_val}")
+                                        followers = backup_val
+                                    results.append((today_str, now_time_str, name, "TikTok", tiktok_handle, followers))
+                                except Exception as e:
+                                    err_msg = str(e)
+                                    all_alerts.append(f"TikTok Scrape Error for {name} ({tiktok_handle}): {err_msg}")
+                                    if backup_val is not None:
+                                        print(f"Scrape failed for {name} (TikTok), using backup count: {backup_val}")
+                                        results.append((today_str, now_time_str, name, "TikTok", tiktok_handle, backup_val))
+                                    else:
+                                        if "429" in err_msg or "blocked" in err_msg.lower():
+                                            all_alerts.append(f"::warning:: Blocked by TikTok while scraping {name} ({tiktok_handle})")
             except Exception as e:
                 all_alerts.append(f"Playwright initialization error: {e}")
             finally:
