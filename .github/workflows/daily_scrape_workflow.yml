@@ -3,6 +3,7 @@ name: Daily Idol Follower Scraper & Avatar Monitor
 on:
   schedule:
     - cron: '10 7,19 * * *' # Every day at 02:10 and 14:10 Bangkok time (19:10 and 07:10 UTC)
+    - cron: '0 13 * * *' # Every day at 20:00 Bangkok time (13:00 UTC) - missing-only run
   workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
 permissions:
@@ -26,7 +27,12 @@ jobs:
     - name: Run Instagram Scraper
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-      run: python3 follower_scraper.py --run --platform instagram
+      run: |
+        if [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
+          python3 follower_scraper.py --run --platform instagram --missing-only
+        else
+          python3 follower_scraper.py --run --platform instagram
+        fi
 
   scrape_x:
     runs-on: ubuntu-latest
@@ -45,7 +51,12 @@ jobs:
     - name: Run X Scraper
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-      run: python3 follower_scraper.py --run --platform x
+      run: |
+        if [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
+          python3 follower_scraper.py --run --platform x --missing-only
+        else
+          python3 follower_scraper.py --run --platform x
+        fi
     - name: Commit and Push idols config updates (if avatar URL changed)
       if: success() || failure()
       run: |
@@ -74,7 +85,12 @@ jobs:
     - name: Run Facebook Scraper
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-      run: python3 follower_scraper.py --run --platform facebook
+      run: |
+        if [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
+          python3 follower_scraper.py --run --platform facebook --missing-only
+        else
+          python3 follower_scraper.py --run --platform facebook
+        fi
 
   scrape_tiktok:
     runs-on: ubuntu-latest
@@ -95,7 +111,12 @@ jobs:
     - name: Run TikTok Scraper
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-      run: python3 follower_scraper.py --run --platform tiktok
+      run: |
+        if [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
+          python3 follower_scraper.py --run --platform tiktok --missing-only
+        else
+          python3 follower_scraper.py --run --platform tiktok
+        fi
 
   finalize_data:
     needs: [scrape_instagram, scrape_x, scrape_facebook, scrape_tiktok]

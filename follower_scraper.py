@@ -70,9 +70,10 @@ def scrape_instagram_socialblade(username: str) -> int:
                         
     raise ValueError(f"SocialBlade returned status {response.status_code} or followers not found in __NEXT_DATA__")
 
-def scrape_instagram_direct(handle: str) -> int:
+def scrape_instagram_direct(handle: str) -> tuple:
     """
     Crawls direct Instagram profile.
+    Returns: (count, is_truncated)
     """
     url = f"https://www.instagram.com/{handle}/"
     # Introduce staggered start to spread concurrent requests (20% slower to avoid rate limits)
@@ -98,13 +99,48 @@ def scrape_instagram_direct(handle: str) -> int:
                 time.sleep(3.0)
                 continue
                 
-            return clean_count_str(match.group(1))
+            count_str = match.group(1).upper()
+            is_truncated = ('K' in count_str) or ('M' in count_str) or ('B' in count_str)
+            return clean_count_str(count_str), is_truncated
         except Exception as e:
             if attempt == 2:
                 raise e
             time.sleep(2.4)
             
     raise ValueError("Instagram rate limit active (returned sign-in page) after 3 attempts")
+
+def scrape_instagram_instastatistics_api(handle: str) -> int:
+    """
+    Scrapes follower count from instastatistics.com using their internal API.
+    """
+    url = f"https://instastatistics.com/api/user/{handle}"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': f'https://instastatistics.com/{handle}',
+        'Accept': 'application/json',
+    }
+    
+    # Stagger/sleep to avoid rate limits
+    time.sleep(random.uniform(0.6, 1.8))
+    
+    for attempt in range(3):
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, dict):
+                    followers = data.get("followers")
+                    if followers is not None:
+                        return int(followers)
+            elif response.status_code in (403, 429):
+                print(f"Instastatistics API returned status {response.status_code} for {handle}. Retrying...")
+            time.sleep(2.0)
+        except Exception as e:
+            if attempt == 2:
+                raise e
+            time.sleep(2.0)
+            
+    raise ValueError(f"Could not fetch followers from Instastatistics API for {handle}")
 
 def scrape_instagram_instastatistics_http(handle: str) -> int:
     """
@@ -208,32 +244,95 @@ def scrape_instagram_instastatistics_playwright(handle: str, browser=None) -> in
 def scrape_instagram(handle: str) -> int:
     """
     Scrapes the public follower count of an Instagram profile.
-    1. Direct Instagram Scrape (First)
-    2. SocialBlade (Second)
-    3. Instastatistics HTTP (Third)
+    1. Try Direct Instagram Scrape first.
+    2. If successful:
+       - Check if it is truncated (contains K/M/B or >= 10k).
+       - If over 10k / truncated:
+         - Try to get the exact count from 3rd party websites (SocialBlade, Instastatistics API, Instastatistics HTTP).
+         - If 3rd party succeeds, return it.
+         - If 3rd party fails, fall back to the truncated count.
+       - If under 10k / not truncated:
+         - Return the exact count immediately.
+    3. If Direct Instagram Scrape fails:
+       - Try Direct Instagram Scrape one more time (try again).
+       - If it still fails:
+         - Try 3rd party websites (SocialBlade, Instastatistics API, Instastatistics HTTP).
+         - If any 3rd party succeeds, return it.
+         - Otherwise, raise ValueError (so it will retry in Playwright fallback or final retries).
     """
-    # 1. Attempt Direct Instagram scrape first
+    direct_success = False
+    count = 0
+    is_truncated = False
+    
     try:
         print(f"Attempting Direct Instagram scrape first for handle: {handle}")
-        return scrape_instagram_direct(handle)
+        count, is_truncated = scrape_instagram_direct(handle)
+        direct_success = True
     except Exception as e:
-        print(f"Direct Instagram scrape failed for {handle}: {e}. Trying SocialBlade next.")
+        print(f"Direct Instagram scrape failed for {handle}: {e}. Retrying Direct Scrape once more.")
+        # If instagram have failed --> try again
+        try:
+            count, is_truncated = scrape_instagram_direct(handle)
+            direct_success = True
+            print(f"Direct Instagram retry succeeded for {handle}.")
+        except Exception as retry_e:
+            print(f"Direct Instagram retry failed for {handle}: {retry_e}.")
 
-    # 2. Attempt SocialBlade second (exact count check)
-    try:
-        print(f"Attempting SocialBlade second for Instagram handle: {handle}")
-        return scrape_instagram_socialblade(handle)
-    except Exception as e:
-        print(f"SocialBlade Instagram scraper failed for {handle}: {e}. Trying Instastatistics HTTP next.")
+    if direct_success:
+        if not is_truncated:
+            # Under 10k: return direct count immediately
+            print(f"Direct Instagram count for {handle} is exact (< 10k): {count}")
+            return count
+        else:
+            # Over 10k: try to scrape from 3rd party to get the exact count
+            print(f"Direct Instagram count for {handle} is truncated (>= 10k): {count}. Querying 3rd party for exact count.")
+            try:
+                exact_count = scrape_instagram_socialblade(handle)
+                print(f"SocialBlade returned exact count for {handle}: {exact_count}")
+                return exact_count
+            except Exception as e:
+                print(f"SocialBlade failed for {handle}: {e}. Trying Instastatistics API next.")
+                
+            try:
+                exact_count = scrape_instagram_instastatistics_api(handle)
+                print(f"Instastatistics API returned exact count for {handle}: {exact_count}")
+                return exact_count
+            except Exception as e:
+                print(f"Instastatistics API failed for {handle}: {e}. Trying Instastatistics HTTP next.")
+                
+            try:
+                exact_count = scrape_instagram_instastatistics_http(handle)
+                print(f"Instastatistics HTTP returned exact count for {handle}: {exact_count}")
+                return exact_count
+            except Exception as e:
+                print(f"Instastatistics HTTP failed for {handle}: {e}. Falling back to truncated direct count: {count}")
+                return count
 
-    # 3. Attempt Instastatistics HTTP third
-    try:
-        print(f"Attempting Instastatistics HTTP for Instagram handle: {handle}")
-        return scrape_instagram_instastatistics_http(handle)
-    except Exception as e:
-        print(f"Instastatistics HTTP failed for {handle}: {e}.")
-
-    raise ValueError(f"All standard scraping layers failed for Instagram handle: {handle}")
+    else:
+        # Direct scrape failed completely: try 3rd party
+        print(f"Direct Instagram scrape failed completely for {handle}. Trying 3rd party sources.")
+        try:
+            exact_count = scrape_instagram_socialblade(handle)
+            print(f"SocialBlade returned count for {handle}: {exact_count}")
+            return exact_count
+        except Exception as e:
+            print(f"SocialBlade failed for {handle}: {e}. Trying Instastatistics API next.")
+            
+        try:
+            exact_count = scrape_instagram_instastatistics_api(handle)
+            print(f"Instastatistics API returned count for {handle}: {exact_count}")
+            return exact_count
+        except Exception as e:
+            print(f"Instastatistics API failed for {handle}: {e}. Trying Instastatistics HTTP next.")
+            
+        try:
+            exact_count = scrape_instagram_instastatistics_http(handle)
+            print(f"Instastatistics HTTP returned count for {handle}: {exact_count}")
+            return exact_count
+        except Exception as e:
+            print(f"Instastatistics HTTP failed for {handle}: {e}.")
+            
+        raise ValueError(f"All standard scraping layers failed for Instagram handle: {handle}")
 
 def scrape_facebook_socialblade(page_name: str) -> int:
     """
@@ -532,6 +631,30 @@ def get_today_backup_csv(csv_path, today_str):
         print(f"Warning: Could not fetch today's CSV backups: {e}")
     return backups
 
+def get_missing_channels(active_idols, output_path, postgres_url, today_str):
+    expected_channels = []
+    for idol in active_idols:
+        name = idol.get("name")
+        if idol.get("instagram_handle"): expected_channels.append((name, "Instagram"))
+        if idol.get("x_handle"): expected_channels.append((name, "X"))
+        if idol.get("facebook_page"): expected_channels.append((name, "Facebook"))
+        if idol.get("tiktok_handle"): expected_channels.append((name, "TikTok"))
+        
+    if postgres_url:
+        backups = get_today_backup_postgres(postgres_url, today_str)
+    else:
+        backups = get_today_backup_csv(output_path, today_str)
+        
+    # backups is a dict: {(idol_name, platform): follower_count}
+    existing_keys = {(k[0].lower(), k[1].lower()) for k in backups.keys()}
+    
+    missing_list = []
+    for name, platform in expected_channels:
+        if (name.lower(), platform.lower()) not in existing_keys:
+            missing_list.append((name, platform))
+            
+    return missing_list
+
 # ========================================================
 # PostgreSQL Data Saving & Synthesis Pipelines
 # ========================================================
@@ -698,7 +821,7 @@ def synthesize_missing_data(csv_path):
 # ========================================================
 # Main Execution Loop
 # ========================================================
-def run_scraper(config_path: str, output_path: str, target_platform: str = None, failed_file: str = None):
+def run_scraper(config_path: str, output_path: str, target_platform: str = None, failed_file: str = None, missing_only: bool = False):
     if not os.path.exists(config_path):
         print(f"Error: Configuration file '{config_path}' not found.")
         return
@@ -740,6 +863,35 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
                 filtered_idols.append(idol_copy)
         active_idols = filtered_idols
         print(f"Retrying scraping for {len(active_idols)} profiles matching failed platforms.")
+    elif missing_only:
+        TZ_BKK = timezone(timedelta(hours=7))
+        now_bkk = datetime.now(TZ_BKK)
+        today_str = now_bkk.strftime('%Y-%m-%d')
+        postgres_url = os.environ.get("POSTGRES_URL")
+        
+        missing_list = get_missing_channels(active_idols, output_path, postgres_url, today_str)
+        print(f"Found {len(missing_list)} missing channels for today ({today_str}).")
+        if not missing_list:
+            print("No missing channels found. Nothing to scrape!")
+            return
+            
+        missing_map = {}
+        for name, platform in missing_list:
+            missing_map.setdefault(name.lower(), set()).add(platform.lower())
+            
+        filtered_idols = []
+        for idol in active_idols:
+            name_lower = idol.get("name", "").lower()
+            if name_lower in missing_map:
+                idol_copy = dict(idol)
+                platforms = missing_map[name_lower]
+                if "instagram" not in platforms: idol_copy["instagram_handle"] = None
+                if "x" not in platforms: idol_copy["x_handle"] = None
+                if "facebook" not in platforms: idol_copy["facebook_page"] = None
+                if "tiktok" not in platforms: idol_copy["tiktok_handle"] = None
+                filtered_idols.append(idol_copy)
+        active_idols = filtered_idols
+        print(f"Scraping {len(active_idols)} profiles matching missing channels.")
     else:
         print(f"Loaded {len(active_idols)} active profiles to scrape...")
 
@@ -1221,6 +1373,7 @@ if __name__ == '__main__':
     parser.add_argument("--config", default="idols.json", help="Path to configuration JSON file (default: idols.json).")
     parser.add_argument("--output", default="follower_history.csv", help="Path to follower history CSV file (default: follower_history.csv).")
     parser.add_argument("--failed-file", default=None, help="JSON file containing list of failed channels to retry.")
+    parser.add_argument("--missing-only", action="store_true", help="Only scrape channels that are missing today's data.")
     parser.add_argument("--synthesize-only", action="store_true", help="Only run PostgreSQL database data synthesis.")
     parser.add_argument("--send-alert", choices=["initial", "final"], help="Send a consolidated Lark notification for the specified phase.")
     
@@ -1236,7 +1389,7 @@ if __name__ == '__main__':
             print("Error: POSTGRES_URL not configured.")
             sys.exit(1)
     elif args.run:
-        run_scraper(args.config, args.output, args.platform, args.failed_file)
+        run_scraper(args.config, args.output, args.platform, args.failed_file, args.missing_only)
     elif args.test:
         test_single_idol(args.test, args.config)
     else:

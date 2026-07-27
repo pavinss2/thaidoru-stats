@@ -513,7 +513,7 @@ function renderColorView() {
         colorSec.innerHTML = `
             <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px; color: ${colorCode}; display: flex; align-items: center; gap: 8px; text-shadow: 0 0 10px color-mix(in srgb, ${colorCode} 30%, transparent);">
                 <span style="width: 10px; height: 10px; border-radius: 50%; background: ${colorCode}; box-shadow: 0 0 10px ${colorCode}; display: inline-block;"></span>
-                ${colorName} Theme (${matchingMembers.length})
+                ${colorName}(${matchingMembers.length})
             </h3>
             <div class="cards-grid" id="color-cards-${colorName.toLowerCase()}"></div>
         `;
