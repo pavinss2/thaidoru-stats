@@ -821,7 +821,7 @@ def synthesize_missing_data(csv_path):
 # ========================================================
 # Main Execution Loop
 # ========================================================
-def run_scraper(config_path: str, output_path: str, target_platform: str = None, failed_file: str = None, missing_only: bool = False):
+def run_scraper(config_path: str, output_path: str, target_platform: str = None, failed_file: str = None, missing_only: bool = False, order: str = "auto"):
     if not os.path.exists(config_path):
         print(f"Error: Configuration file '{config_path}' not found.")
         return
@@ -894,6 +894,22 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
         print(f"Scraping {len(active_idols)} profiles matching missing channels.")
     else:
         print(f"Loaded {len(active_idols)} active profiles to scrape...")
+
+    # Apply order (asc = normal idols.json order, desc = reversed idols.json order, auto = AM: asc, PM: desc in Bangkok time)
+    TZ_BKK = timezone(timedelta(hours=7))
+    now_bkk = datetime.now(TZ_BKK)
+    selected_order = order.lower() if order else "auto"
+    if selected_order == "auto":
+        is_pm = now_bkk.hour >= 12
+        selected_order = "desc" if is_pm else "asc"
+        period_str = "PM" if is_pm else "AM"
+        print(f"Bangkok time: {now_bkk.strftime('%Y-%m-%d %H:%M:%S')} ({period_str}) -> Auto-selected '{selected_order.upper()}' order.")
+
+    if selected_order in ["desc", "descending", "reverse"]:
+        active_idols.reverse()
+        print(f"Scraping {len(active_idols)} profiles in DESCENDING order (reversed idols.json).")
+    else:
+        print(f"Scraping {len(active_idols)} profiles in ASCENDING order (normal idols.json).")
 
     original_active_idols = list(active_idols)
     start_time = time.time()
@@ -1182,8 +1198,8 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
 
         # Check total elapsed time
         elapsed = time.time() - start_time
-        if elapsed >= 900:  # 15 minutes limit
-            print(f"\nExecution reached {elapsed:.1f}s (>= 15 minutes limit). Terminating scraper run.")
+        if elapsed >= 720:  # 12 minutes limit
+            print(f"\nExecution reached {elapsed:.1f}s (>= 12 minutes limit). Terminating scraper run.")
             # Write remaining failed channels to JSON for tracking
             failed_scrapes_path = f"failed_scrapes_{target_platform.lower()}.json" if target_platform else "failed_scrapes.json"
             try:
@@ -1195,12 +1211,12 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
                 
             if db_sync_error:
                 raise db_sync_error
-            raise ValueError(f"Scrape completed with {len(failed_channels)} remaining failed channels after 15m timeout.")
+            raise ValueError(f"Scrape completed with {len(failed_channels)} remaining failed channels after 12m timeout.")
 
         # Determine if we can wait 2 minutes
-        remaining = 900 - elapsed
+        remaining = 720 - elapsed
         if remaining <= 120:
-            print(f"\nOnly {remaining:.1f}s remaining before 15m timeout (less than 2 minutes retry interval). Terminating.")
+            print(f"\nOnly {remaining:.1f}s remaining before 12m timeout (less than 2 minutes retry interval). Terminating.")
             failed_scrapes_path = f"failed_scrapes_{target_platform.lower()}.json" if target_platform else "failed_scrapes.json"
             try:
                 with open(failed_scrapes_path, "w", encoding="utf-8") as f:
@@ -1209,7 +1225,7 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
                 pass
             if db_sync_error:
                 raise db_sync_error
-            raise ValueError(f"Scrape completed with {len(failed_channels)} remaining failed channels before 15m timeout.")
+            raise ValueError(f"Scrape completed with {len(failed_channels)} remaining failed channels before 12m timeout.")
 
         print(f"\nFailed to scrape {len(failed_channels)} channels. Waiting 2 minutes to retry...")
         time.sleep(120)
@@ -1375,7 +1391,7 @@ if __name__ == '__main__':
     parser.add_argument("--failed-file", default=None, help="JSON file containing list of failed channels to retry.")
     parser.add_argument("--missing-only", action="store_true", help="Only scrape channels that are missing today's data.")
     parser.add_argument("--synthesize-only", action="store_true", help="Only run PostgreSQL database data synthesis.")
-    parser.add_argument("--send-alert", choices=["initial", "final"], help="Send a consolidated Lark notification for the specified phase.")
+    parser.add_argument("--order", choices=["asc", "desc", "auto"], default="auto", help="Scraping order for idols list: 'asc' (normal order), 'desc' (reversed order), or 'auto' (AM=asc, PM=desc in Bangkok time).")
     
     args = parser.parse_args()
     
@@ -1389,7 +1405,7 @@ if __name__ == '__main__':
             print("Error: POSTGRES_URL not configured.")
             sys.exit(1)
     elif args.run:
-        run_scraper(args.config, args.output, args.platform, args.failed_file, args.missing_only)
+        run_scraper(args.config, args.output, args.platform, args.failed_file, args.missing_only, args.order)
     elif args.test:
         test_single_idol(args.test, args.config)
     else:

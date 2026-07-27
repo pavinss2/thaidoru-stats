@@ -28,10 +28,19 @@ jobs:
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       run: |
-        if [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
-          python3 follower_scraper.py --run --platform instagram --missing-only
+        HOUR=$(TZ="Asia/Bangkok" date +%H)
+        if [ "$HOUR" -lt 12 ]; then
+          ORDER_FLAG="--order asc"
+          echo "Bangkok time hour $HOUR (AM) -> Order: ASCENDING"
         else
-          python3 follower_scraper.py --run --platform instagram
+          ORDER_FLAG="--order desc"
+          echo "Bangkok time hour $HOUR (PM) -> Order: DESCENDING"
+        fi
+
+        if [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
+          python3 follower_scraper.py --run --platform instagram --missing-only $ORDER_FLAG
+        else
+          python3 follower_scraper.py --run --platform instagram $ORDER_FLAG
         fi
 
   scrape_x:
@@ -52,10 +61,19 @@ jobs:
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       run: |
-        if [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
-          python3 follower_scraper.py --run --platform x --missing-only
+        HOUR=$(TZ="Asia/Bangkok" date +%H)
+        if [ "$HOUR" -lt 12 ]; then
+          ORDER_FLAG="--order asc"
+          echo "Bangkok time hour $HOUR (AM) -> Order: ASCENDING"
         else
-          python3 follower_scraper.py --run --platform x
+          ORDER_FLAG="--order desc"
+          echo "Bangkok time hour $HOUR (PM) -> Order: DESCENDING"
+        fi
+
+        if [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
+          python3 follower_scraper.py --run --platform x --missing-only $ORDER_FLAG
+        else
+          python3 follower_scraper.py --run --platform x $ORDER_FLAG
         fi
     - name: Commit and Push idols config updates (if avatar URL changed)
       if: success() || failure()
@@ -86,10 +104,19 @@ jobs:
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       run: |
-        if [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
-          python3 follower_scraper.py --run --platform facebook --missing-only
+        HOUR=$(TZ="Asia/Bangkok" date +%H)
+        if [ "$HOUR" -lt 12 ]; then
+          ORDER_FLAG="--order asc"
+          echo "Bangkok time hour $HOUR (AM) -> Order: ASCENDING"
         else
-          python3 follower_scraper.py --run --platform facebook
+          ORDER_FLAG="--order desc"
+          echo "Bangkok time hour $HOUR (PM) -> Order: DESCENDING"
+        fi
+
+        if [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
+          python3 follower_scraper.py --run --platform facebook --missing-only $ORDER_FLAG
+        else
+          python3 follower_scraper.py --run --platform facebook $ORDER_FLAG
         fi
 
   scrape_tiktok:
@@ -112,14 +139,56 @@ jobs:
       env:
         POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       run: |
-        if [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
-          python3 follower_scraper.py --run --platform tiktok --missing-only
+        HOUR=$(TZ="Asia/Bangkok" date +%H)
+        if [ "$HOUR" -lt 12 ]; then
+          ORDER_FLAG="--order asc"
+          echo "Bangkok time hour $HOUR (AM) -> Order: ASCENDING"
         else
-          python3 follower_scraper.py --run --platform tiktok
+          ORDER_FLAG="--order desc"
+          echo "Bangkok time hour $HOUR (PM) -> Order: DESCENDING"
         fi
 
-  finalize_data:
+        if [ "${{ github.event.schedule }}" = "0 13 * * *" ]; then
+          python3 follower_scraper.py --run --platform tiktok --missing-only $ORDER_FLAG
+        else
+          python3 follower_scraper.py --run --platform tiktok $ORDER_FLAG
+        fi
+
+  scrape_missing_channels:
     needs: [scrape_instagram, scrape_x, scrape_facebook, scrape_tiktok]
+    runs-on: ubuntu-latest
+    if: always()
+    timeout-minutes: 16
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: |
+        pip install requests beautifulsoup4 playwright psycopg2-binary
+        playwright install --with-deps chromium
+    - name: Run Missing Channels Scraper
+      env:
+        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+      run: |
+        HOUR=$(TZ="Asia/Bangkok" date +%H)
+        if [ "$HOUR" -lt 12 ]; then
+          ORDER_FLAG="--order asc"
+          echo "Bangkok time hour $HOUR (AM) -> Order: ASCENDING"
+        else
+          ORDER_FLAG="--order desc"
+          echo "Bangkok time hour $HOUR (PM) -> Order: DESCENDING"
+        fi
+
+        python3 follower_scraper.py --run --missing-only $ORDER_FLAG
+
+  finalize_data:
+    needs: [scrape_instagram, scrape_x, scrape_facebook, scrape_tiktok, scrape_missing_channels]
     runs-on: ubuntu-latest
     if: always()
     steps:
