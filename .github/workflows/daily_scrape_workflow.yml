@@ -187,7 +187,7 @@ jobs:
 
         python3 follower_scraper.py --run --missing-only $ORDER_FLAG
 
-  finalize_data:
+  lark_notification:
     needs: [scrape_instagram, scrape_x, scrape_facebook, scrape_tiktok, scrape_missing_channels]
     runs-on: ubuntu-latest
     if: always()
