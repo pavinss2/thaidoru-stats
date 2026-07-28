@@ -1392,6 +1392,7 @@ if __name__ == '__main__':
     parser.add_argument("--missing-only", action="store_true", help="Only scrape channels that are missing today's data.")
     parser.add_argument("--synthesize-only", action="store_true", help="Only run PostgreSQL database data synthesis.")
     parser.add_argument("--order", choices=["asc", "desc", "auto"], default="auto", help="Scraping order for idols list: 'asc' (normal order), 'desc' (reversed order), or 'auto' (AM=asc, PM=desc in Bangkok time).")
+    parser.add_argument("--send-alert", default=None, help="Send consolidated Lark alert notification (e.g. main, missing, final).")
     
     args = parser.parse_args()
     
