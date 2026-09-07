@@ -439,6 +439,70 @@ def scrape_x(handle: str) -> int:
     followers, _ = scrape_x_and_avatar(handle)
     return followers
 
+def scrape_x_playwright(handle: str, browser=None) -> tuple:
+    """
+    Scrapes public follower count and avatar URL of an X (Twitter) profile using Playwright.
+    Reuses browser context if a shared browser instance is provided.
+    """
+    from playwright.sync_api import sync_playwright
+    url = f"https://x.com/{handle}"
+    
+    local_browser = False
+    playwright_context = None
+    if browser is None:
+        playwright_context = sync_playwright().start()
+        browser = playwright_context.chromium.launch(headless=True)
+        local_browser = True
+        
+    try:
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            viewport={"width": 1280, "height": 800}
+        )
+        page = context.new_page()
+        try:
+            response = page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            if response and response.status not in (200, 304):
+                raise ValueError(f"X returned status code {response.status}")
+                
+            page.wait_for_timeout(3000) # Let Javascript render
+            html = page.content()
+            
+            matches = re.findall(r'\"followers\"[^\d]*(\d+)', html) or re.findall(r'followers:(\d+)', html) or re.findall(r'\"followers_count\":\s*(\d+)', html)
+            if not matches:
+                soup = BeautifulSoup(html, 'html.parser')
+                desc_tag = soup.find('meta', attrs={'name': 'description'}) or soup.find('meta', attrs={'property': 'og:description'})
+                if desc_tag and desc_tag.get('content'):
+                    m = re.search(r'([\d\.,]+[MK]?)\s+Followers', desc_tag['content'], re.IGNORECASE)
+                    if m:
+                        followers_count = clean_count_str(m.group(1))
+                        matches = [followers_count]
+                        
+            if not matches:
+                raise ValueError(f"Follower count not found in X page source via Playwright for {handle}")
+                
+            followers = int(matches[0])
+            
+            avatar_url = ""
+            soup = BeautifulSoup(html, 'html.parser')
+            og_image_tag = soup.find('meta', property='og:image')
+            if og_image_tag and og_image_tag.get('content'):
+                avatar_url = og_image_tag['content']
+                suffix_pattern = r'_(?:normal|bigger|mini|reasonably_small|x96|\d+x\d+)(\.[a-zA-Z0-9]+)$'
+                if re.search(suffix_pattern, avatar_url):
+                    avatar_url = re.sub(suffix_pattern, r'_400x400\1', avatar_url)
+                    
+            return followers, avatar_url
+        finally:
+            page.close()
+            context.close()
+    finally:
+        if local_browser:
+            if browser:
+                browser.close()
+            if playwright_context:
+                playwright_context.stop()
+
 def scrape_tiktok(handle: str, browser=None) -> int:
     """
     Scrapes the public follower count of a TikTok profile using Playwright.
@@ -989,12 +1053,14 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
                         for res in local_res:
                             results.append((today_str, now_time_str, idol_name, res[0], res[1], res[2]))
                     
-        # 2. Run Playwright fallback for failed Instagram channels & TikTok scraping
+        # 2. Run Playwright fallback for failed Instagram & X channels & TikTok scraping
         failed_ig_channels = [ch for ch in http_truly_failed if ch[1].lower() == "instagram"]
+        failed_x_channels = [ch for ch in http_truly_failed if ch[1].lower() == "x"]
         run_playwright_ig = len(failed_ig_channels) > 0
+        run_playwright_x = len(failed_x_channels) > 0
         run_tiktok = (target_platform is None or target_platform.lower() == "tiktok") and any(idol.get("tiktok_handle") for idol in active_idols)
         
-        if run_playwright_ig or run_tiktok:
+        if run_playwright_ig or run_playwright_x or run_tiktok:
             print("\nStarting Playwright browser session...")
             browser_instance = None
             playwright_context = None
@@ -1026,6 +1092,29 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
                                 except Exception as e:
                                     print(f"    Playwright fallback failed for {name} ({ig_handle}): {e}")
                                     all_alerts.append(f"Instagram Playwright Fallback Error for {name} ({ig_handle}): {e}")
+
+                # B. Playwright fallback for failed X channels
+                if run_playwright_x:
+                    print(f"Retrying {len(failed_x_channels)} failed X channels using Playwright...")
+                    for name, platform in failed_x_channels:
+                        idol_data = next((i for i in active_idols if i.get("name") == name), None)
+                        if idol_data:
+                            x_handle = idol_data.get("x_handle")
+                            if x_handle:
+                                print(f"  X Playwright fallback for {name} ({x_handle})...")
+                                try:
+                                    followers, avatar_url = scrape_x_playwright(x_handle, browser=browser_instance)
+                                    print(f"    Successfully resolved X via Playwright: {followers}")
+                                    if avatar_url:
+                                        idol_data["x_avatar_url"] = avatar_url
+                                        
+                                    results = [r for r in results if not (r[2] == name and r[3] == "X")]
+                                    results.append((today_str, now_time_str, name, "X", x_handle, followers))
+                                    
+                                    http_truly_failed = [ch for ch in http_truly_failed if not (ch[0] == name and ch[1].lower() == "x")]
+                                except Exception as e:
+                                    print(f"    Playwright fallback failed for {name} (X - {x_handle}): {e}")
+                                    all_alerts.append(f"X Playwright Fallback Error for {name} ({x_handle}): {e}")
                                     
                 # B. Scrape TikTok profiles
                 if run_tiktok:
