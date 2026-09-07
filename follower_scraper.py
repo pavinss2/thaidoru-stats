@@ -406,31 +406,66 @@ def scrape_facebook(page_name: str) -> int:
 def scrape_x_and_avatar(handle: str) -> tuple:
     """
     Scrapes public follower count and high-res profile image URL of an X (Twitter) profile.
+    1. Try Direct X.com HTTP request.
+    2. Fallback to fxtwitter / vxtwitter APIs if blocked.
     """
     url = f"https://x.com/{handle}"
-    
-    # Stagger requests (20% slower to avoid rate limits)
     time.sleep(random.uniform(0.24, 1.44))
     
-    response = requests.get(url, headers=CHROME_HEADERS, timeout=15)
-    if response.status_code != 200:
-        raise ValueError(f"X returned status code {response.status_code}")
-        
-    matches = re.findall(r'\"followers\"[^\d]*(\d+)', response.text) or re.findall(r'followers:(\d+)', response.text)
-    if not matches:
-        raise ValueError("Follower count not found in X page source")
-    followers = int(matches[0])
-    
-    avatar_url = ""
-    soup = BeautifulSoup(response.text, 'html.parser')
-    og_image_tag = soup.find('meta', property='og:image')
-    if og_image_tag and og_image_tag.get('content'):
-        avatar_url = og_image_tag['content']
-        suffix_pattern = r'_(?:normal|bigger|mini|reasonably_small|x96|\d+x\d+)(\.[a-zA-Z0-9]+)$'
-        if re.search(suffix_pattern, avatar_url):
-            avatar_url = re.sub(suffix_pattern, r'_400x400\1', avatar_url)
-            
-    return followers, avatar_url
+    try:
+        response = requests.get(url, headers=CHROME_HEADERS, timeout=15)
+        if response.status_code == 200:
+            matches = re.findall(r'\"followers\"[^\d]*(\d+)', response.text) or re.findall(r'followers:(\d+)', response.text)
+            if matches:
+                followers = int(matches[0])
+                avatar_url = ""
+                soup = BeautifulSoup(response.text, 'html.parser')
+                og_image_tag = soup.find('meta', property='og:image')
+                if og_image_tag and og_image_tag.get('content'):
+                    avatar_url = og_image_tag['content']
+                    suffix_pattern = r'_(?:normal|bigger|mini|reasonably_small|x96|\d+x\d+)(\.[a-zA-Z0-9]+)$'
+                    if re.search(suffix_pattern, avatar_url):
+                        avatar_url = re.sub(suffix_pattern, r'_400x400\1', avatar_url)
+                return followers, avatar_url
+    except Exception as e:
+        print(f"Direct X scrape failed for {handle}: {e}. Trying fxtwitter/vxtwitter APIs...")
+
+    # Fallback 1: fxtwitter API
+    try:
+        fx_url = f"https://api.fxtwitter.com/{handle}"
+        fx_res = requests.get(fx_url, headers=CHROME_HEADERS, timeout=10)
+        if fx_res.status_code == 200:
+            fx_data = fx_res.json()
+            user_info = fx_data.get('user', {})
+            followers = user_info.get('followers')
+            avatar_url = user_info.get('avatar_url', '')
+            if followers is not None:
+                if avatar_url:
+                    suffix_pattern = r'_(?:normal|bigger|mini|reasonably_small|x96|\d+x\d+)(\.[a-zA-Z0-9]+)$'
+                    if re.search(suffix_pattern, avatar_url):
+                        avatar_url = re.sub(suffix_pattern, r'_400x400\1', avatar_url)
+                return int(followers), avatar_url
+    except Exception as fx_e:
+        print(f"fxtwitter API failed for {handle}: {fx_e}")
+
+    # Fallback 2: vxtwitter API
+    try:
+        vx_url = f"https://api.vxtwitter.com/{handle}"
+        vx_res = requests.get(vx_url, headers=CHROME_HEADERS, timeout=10)
+        if vx_res.status_code == 200:
+            vx_data = vx_res.json()
+            followers = vx_data.get('followers_count')
+            avatar_url = vx_data.get('profile_image_url', '')
+            if followers is not None:
+                if avatar_url:
+                    suffix_pattern = r'_(?:normal|bigger|mini|reasonably_small|x96|\d+x\d+)(\.[a-zA-Z0-9]+)$'
+                    if re.search(suffix_pattern, avatar_url):
+                        avatar_url = re.sub(suffix_pattern, r'_400x400\1', avatar_url)
+                return int(followers), avatar_url
+    except Exception as vx_e:
+        print(f"vxtwitter API failed for {handle}: {vx_e}")
+
+    raise ValueError(f"Could not scrape follower count for X handle: {handle}")
 
 def scrape_x(handle: str) -> int:
     """
