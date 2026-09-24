@@ -49,7 +49,8 @@
     "color": "White",
     "type": "member",
     "birthday": "April 11",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070387106242056192/urj9Fozt_400x400.jpg"
+    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070387106242056192/urj9Fozt_400x400.jpg",
+    "active": false
   },
   {
     "name": "Lilin",
@@ -270,7 +271,7 @@
     "color": "Purple",
     "type": "member",
     "birthday": null,
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070379569904013312/lR5oCzQe_400x400.jpg"
+    "x_avatar_url": "https://pbs.twimg.com/profile_images/2103064583858683904/Qg1a3VeY_400x400.jpg"
   },
   {
     "name": "Mickey",
