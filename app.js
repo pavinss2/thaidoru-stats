@@ -283,6 +283,7 @@ function setupFilters() {
             } else {
                 const membersList = idolsList.filter(i => i.type === "member");
                 const activeMembers = membersList.filter(m => {
+                    if (!passesGraduatedFilter(m)) return false;
                     if (filterGroup !== "all" && m.group !== filterGroup) return false;
                     if (filterColor !== "all" && m.color !== filterColor) return false;
                     return true;
@@ -343,6 +344,11 @@ function setupFilters() {
         filterColor = e.target.value;
         filterAndRender();
         renderGrowthChart();
+    });
+    
+    // Show / hide graduated idols (hidden by default)
+    bindGraduatedToggle("show-graduated-toggle", () => {
+        filterAndRender();
     });
     
     // Directory Sort Change (Decoupled from Graph)
@@ -409,6 +415,7 @@ function setupFilters() {
         selectTop10Btn.addEventListener("click", () => {
             const membersList = idolsList.filter(i => i.type === "member");
             const activeMembers = membersList.filter(m => {
+                if (!passesGraduatedFilter(m)) return false;
                 if (filterGroup !== "all" && m.group !== filterGroup) return false;
                 if (filterColor !== "all" && m.color !== filterColor) return false;
                 return true;
@@ -439,6 +446,7 @@ function setupFilters() {
         if (activeView === "group") {
             const groupsList = idolsList.filter(i => i.type === "group");
             itemsToSelect = groupsList.filter(group => {
+                if (!passesGraduatedFilter(group)) return false;
                 if (searchQuery && !group.name.toLowerCase().includes(searchQuery)) return false;
                 if (filterGroup !== "all" && group.group !== filterGroup) return false;
                 if (filterColor !== "all" && group.color !== filterColor) return false;
@@ -447,6 +455,7 @@ function setupFilters() {
         } else {
             const membersList = idolsList.filter(i => i.type === "member");
             itemsToSelect = membersList.filter(member => {
+                if (!passesGraduatedFilter(member)) return false;
                 if (searchQuery && !member.name.toLowerCase().includes(searchQuery) && !member.group.toLowerCase().includes(searchQuery)) return false;
                 if (filterGroup !== "all" && member.group !== filterGroup) return false;
                 if (filterColor !== "all" && member.color !== filterColor) return false;
@@ -496,6 +505,9 @@ function renderCard(idol, container) {
     if (selectedIdols.includes(idol.name)) {
         card.classList.add("selected");
     }
+    if (isGraduated(idol)) {
+        card.classList.add("graduated");
+    }
     
     // Glow border colors are forced to white. Dot maps to member-color.
     card.style.setProperty("--card-glow-color", "#FFFFFF");
@@ -525,6 +537,7 @@ function renderCard(idol, container) {
                 </span>
                 <span class="member-tagline">
                     ${isGroup ? '<span class="badge-official">Official Channel</span>' : `<span class="group-badge">${idol.group}</span>`}
+                    ${graduatedBadgeHtml(idol)}
                 </span>
             </div>
         </div>
@@ -583,6 +596,7 @@ function filterAndRender() {
         membersSection.style.display = "none";
         
         let filteredGroups = groupsList.filter(group => {
+            if (!passesGraduatedFilter(group)) return false;
             if (searchQuery && !group.name.toLowerCase().includes(searchQuery)) return false;
             if (filterGroup !== "all" && group.group !== filterGroup) return false;
             if (filterColor !== "all" && group.color !== filterColor) return false;
@@ -602,6 +616,7 @@ function filterAndRender() {
         membersSection.style.display = "block";
         
         let filteredMembers = membersList.filter(member => {
+            if (!passesGraduatedFilter(member)) return false;
             if (searchQuery && !member.name.toLowerCase().includes(searchQuery) && !member.group.toLowerCase().includes(searchQuery)) return false;
             if (filterGroup !== "all" && member.group !== filterGroup) return false;
             if (filterColor !== "all" && member.color !== filterColor) return false;

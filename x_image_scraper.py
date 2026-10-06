@@ -4,6 +4,7 @@ import os
 import json
 import requests
 from bs4 import BeautifulSoup
+from idol_status import is_scrapable
 
 def get_x_profile_image_url(profile_url: str) -> str:
     """
@@ -53,8 +54,8 @@ def update_idols_json(config_path="idols.json"):
     changes_detected = False
     
     for idx, idol in enumerate(idols, 1):
-        # Skip if already marked inactive
-        if idol.get("active") is False:
+        # Skip if already marked inactive or graduated
+        if not is_scrapable(idol):
             continue
             
         name = idol.get("name")
