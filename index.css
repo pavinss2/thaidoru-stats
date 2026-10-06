@@ -1348,3 +1348,42 @@ a.platform-metric:hover {
 }
 
 
+
+/* Graduated idols (synced from thaidoru-core) */
+.badge-graduated {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #E1E1E6;
+    background: rgba(142, 142, 159, 0.18);
+    border: 1px solid rgba(142, 142, 159, 0.4);
+    padding: 2px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.member-card.graduated .member-avatar,
+tr.graduated .member-avatar {
+    filter: grayscale(0.7);
+    opacity: 0.75;
+}
+
+.graduated-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.graduated-toggle input {
+    accent-color: var(--accent-purple);
+    cursor: pointer;
+    margin: 0;
+}
+
+.graduated-toggle span {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}

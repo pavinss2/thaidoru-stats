@@ -194,6 +194,18 @@ function setupSearchAndFilters() {
         });
     }
 
+    // Show / hide graduated members (one shared preference for both tabs)
+    const syncGraduatedToggles = () => {
+        ["member-tab-graduated-toggle", "color-tab-graduated-toggle"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.checked = getShowGraduated();
+        });
+        renderMemberView();
+        renderColorView();
+    };
+    bindGraduatedToggle("member-tab-graduated-toggle", syncGraduatedToggles);
+    bindGraduatedToggle("color-tab-graduated-toggle", syncGraduatedToggles);
+
     // Color Search & Filters
     const colorSearch = document.getElementById("color-search-input");
     if (colorSearch) {
@@ -302,7 +314,7 @@ function renderAgencyView() {
 
     filteredAgencies.forEach(agencyName => {
         const agencyGroups = idolsList.filter(i => i.type === "group" && i.agency === agencyName);
-        const agencyMembers = idolsList.filter(i => i.type === "member" && i.agency === agencyName);
+        const agencyMembers = idolsList.filter(i => i.type === "member" && i.agency === agencyName && !isGraduated(i));
 
         const row = document.createElement("tr");
         row.style.cursor = "pointer";
@@ -386,7 +398,7 @@ function renderGroupView() {
     filteredGroups.sort((a, b) => a.name.localeCompare(b.name));
 
     filteredGroups.forEach(group => {
-        const membersCount = idolsList.filter(i => i.type === "member" && i.group === group.name).length;
+        const membersCount = idolsList.filter(i => i.type === "member" && i.group === group.name && !isGraduated(i)).length;
         const initials = group.name.slice(0, 2).toUpperCase();
         const avatarStyle = group.x_avatar_url ? `style="background-image: url('${group.x_avatar_url}'); background-size: cover; background-position: center;"` : '';
 
@@ -424,6 +436,7 @@ function renderMemberView() {
 
     const membersList = idolsList.filter(i => i.type === "member");
     const filteredMembers = membersList.filter(m => {
+        if (!passesGraduatedFilter(m)) return false;
         if (memberSearchQuery && !m.name.toLowerCase().includes(memberSearchQuery) && !m.group.toLowerCase().includes(memberSearchQuery)) return false;
         if (memberTabGroupFilter !== "all" && m.group !== memberTabGroupFilter) return false;
         if (memberTabAgencyFilter !== "all" && m.agency !== memberTabAgencyFilter) return false;
@@ -444,11 +457,13 @@ function renderMemberView() {
 
         const row = document.createElement("tr");
         row.style.cursor = "pointer";
+        if (isGraduated(m)) row.classList.add("graduated");
         row.innerHTML = `
             <td style="font-weight: 700; color: white;">
                 <div style="display:flex; align-items:center; gap: 10px;">
                     <div class="member-avatar" ${avatarStyle} style="width:32px; height:32px; font-size: 11px; --card-glow-color: ${resolveColor(m.color)}">${m.x_avatar_url ? '' : initials}</div>
                     <span>${m.name}</span>
+                    ${graduatedBadgeHtml(m)}
                 </div>
             </td>
             <td>
@@ -490,6 +505,7 @@ function renderColorView() {
     colors.forEach(colorName => {
         const matchingMembers = membersList.filter(m => {
             if (m.color !== colorName) return false;
+            if (!passesGraduatedFilter(m)) return false;
             if (colorSearchQuery && !m.name.toLowerCase().includes(colorSearchQuery) && !m.group.toLowerCase().includes(colorSearchQuery)) return false;
             if (colorTabGroupFilter !== "all" && m.group !== colorTabGroupFilter) return false;
             if (colorTabAgencyFilter !== "all" && m.agency !== colorTabAgencyFilter) return false;
@@ -525,6 +541,7 @@ function renderColorView() {
             const card = document.createElement("div");
             card.classList.add("member-card");
             card.classList.add("no-toggle");
+            if (isGraduated(m)) card.classList.add("graduated");
             card.style.setProperty("--card-glow-color", colorCode);
             card.style.setProperty("--member-color", colorCode);
             card.style.padding = "16px";
@@ -539,6 +556,7 @@ function renderColorView() {
                         <span class="member-name" style="font-size: 16px;">${m.name}</span>
                         <span class="member-tagline" style="font-size: 11px;">
                             <span class="group-badge" style="padding: 1px 6px;">${m.group}</span>
+                            ${graduatedBadgeHtml(m)}
                         </span>
                     </div>
                 </div>

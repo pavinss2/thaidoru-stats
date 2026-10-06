@@ -27,6 +27,9 @@ jobs:
       run: |
         pip install requests beautifulsoup4
 
+    - name: Sync idols.json from thaidoru-core
+      run: python3 sync_idols.py
+
     - name: Run Avatar Monitor
       run: |
         python3 x_image_scraper.py --update-config

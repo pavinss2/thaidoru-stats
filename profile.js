@@ -197,7 +197,8 @@ function renderProfilePanel() {
     const badges = document.getElementById("profile-badges");
     badges.innerHTML = isGroup 
         ? '<span class="badge-official">Official Channel</span>'
-        : `<a href="profile.html?name=${encodeURIComponent(memberProfile.group)}" class="group-badge-link" style="text-decoration:none;"><span class="group-badge" style="background: rgba(255,255,255,0.06); font-size: 11px; padding: 4px 10px; border-radius: 8px; cursor: pointer; transition: var(--transition-smooth);">${memberProfile.group}</span></a>`;
+        : `<a href="profile.html?name=${encodeURIComponent(memberProfile.group)}" class="group-badge-link" style="text-decoration:none;"><span class="group-badge" style="background: rgba(255,255,255,0.06); font-size: 11px; padding: 4px 10px; border-radius: 8px; cursor: pointer; transition: var(--transition-smooth);">${memberProfile.group}</span></a>`
+    badges.innerHTML += graduatedBadgeHtml(memberProfile);
         
     // Metadata Details
     const groupName = isGroup ? name : memberProfile.group;
@@ -271,7 +272,7 @@ function renderProfilePanel() {
     
     if (membersContainer && membersList) {
         if (isGroup) {
-            const groupMembers = idolsList.filter(i => i.type === "member" && i.group.toLowerCase() === name.toLowerCase());
+            const groupMembers = idolsList.filter(i => i.type === "member" && i.group.toLowerCase() === name.toLowerCase() && !isGraduated(i));
             
             membersList.innerHTML = "";
             groupMembers.forEach(m => {

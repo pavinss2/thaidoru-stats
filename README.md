@@ -36,7 +36,19 @@ graph TD
 ## 🛠️ Data Pipeline & Components
 
 ### 1. Data Configuration: `idols.json`
-Stores the metadata for all 5 official group channels and 40 individual member profiles:
+`idols.json` is synced from [thaidoru-core](https://github.com/pavinss2/thaidoru-core), the source of truth for idol data. `sync_idols.py` reads core's published API (`https://pavinss2.github.io/thaidoru-core/v1/`), keeps only the **Catsolute** groups and members, and rewrites `idols.json`. The daily workflow runs it before scraping and commits any change. If core can't be reached, the existing file is kept as the last snapshot.
+
+```bash
+python3 sync_idols.py --dry-run                          # show what would change
+python3 sync_idols.py                                    # sync from the live API
+python3 sync_idols.py --source ../thaidoru-core/src/data # sync from a local core checkout
+```
+
+**Graduated idols**: when a member's membership in core is graduated (or withdrawn), the sync sets `"status": "graduated"` and `"graduation_date"`. The scrapers skip them (see `idol_status.py`), but their follower history stays in the database and they stay on the dashboard with a *Graduated* label. Lists hide them by default; tick **Show graduated** to bring them back.
+
+To change idol data (new member, new handle, graduation), edit it in thaidoru-core, not here. Only `x_avatar_url` and `"active": false` are owned by this repo (the avatar bot), and the sync keeps them.
+
+Stores the metadata for all 5 official group channels and every Catsolute member profile:
 * **Schema Attributes**:
   * `"name"`: Display name of the member or group.
   * `"type"`: `"group"` (Official channel) or `"member"`.
@@ -44,6 +56,9 @@ Stores the metadata for all 5 official group channels and 40 individual member p
   * `"color"`: representative theme color keyword.
   * `"instagram_handle"`, `"x_handle"`, `"facebook_page"`, `"tiktok_handle"`: Platform identifiers.
   * `"x_avatar_url"`: Cached high-resolution (`400x400`) profile picture URL.
+  * `"core_id"`: The member or group id in thaidoru-core.
+  * `"status"`: `"active"` or `"graduated"` (members), `"active"` or `"disbanded"` (groups).
+  * `"graduation_date"`: Last day in the group, from core, when graduated.
 
 ### 2. Database Engine: PostgreSQL (`follower_history` table)
 *   **Table Schema**: Contains columns for `date`, `timestamp`, `idol_name`, `platform`, `username`, and `follower_count`.

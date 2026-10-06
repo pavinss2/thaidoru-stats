@@ -154,7 +154,8 @@ function renderAgencyPage() {
     // Normalise and filter
     const agencyNameNorm = selectedAgencyName.toLowerCase();
     const agencyGroups = idolsList.filter(i => i.type === "group" && i.agency && i.agency.toLowerCase() === agencyNameNorm);
-    const agencyMembers = idolsList.filter(i => i.type === "member" && i.agency && i.agency.toLowerCase() === agencyNameNorm);
+    // Agency page shows the current roster; graduated members live on in the directory
+    const agencyMembers = idolsList.filter(i => i.type === "member" && i.agency && i.agency.toLowerCase() === agencyNameNorm && !isGraduated(i));
 
     // If no groups or members, show message and return
     if (agencyGroups.length === 0 && agencyMembers.length === 0) {

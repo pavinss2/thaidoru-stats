@@ -10,6 +10,7 @@ from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from bs4 import BeautifulSoup
+from idol_status import is_scrapable
 
 # Standard HTTP headers
 GOOGLEBOT_HEADERS = {
@@ -928,7 +929,7 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
     with open(config_path, 'r', encoding='utf-8') as f:
         idols = json.load(f)
         
-    active_idols = [i for i in idols if i.get("active") is not False]
+    active_idols = [i for i in idols if is_scrapable(i)]
     
     # Filter active_idols to only those failed channels if failed_file is provided
     failed_list = []
@@ -992,7 +993,10 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
         active_idols = filtered_idols
         print(f"Scraping {len(active_idols)} profiles matching missing channels.")
     else:
+        skipped = [i.get("name") for i in idols if not is_scrapable(i)]
         print(f"Loaded {len(active_idols)} active profiles to scrape...")
+        if skipped:
+            print(f"Skipping {len(skipped)} graduated/inactive profiles: {', '.join(skipped)}")
 
     # Apply order (asc = normal idols.json order, desc = reversed idols.json order, auto = AM: asc, PM: desc in Bangkok time)
     TZ_BKK = timezone(timedelta(hours=7))
@@ -1383,7 +1387,7 @@ def send_consolidated_alert(phase: str, config_path: str = "idols.json"):
         
     with open(config_path, 'r', encoding='utf-8') as f:
         idols = json.load(f)
-    active_idols = [i for i in idols if i.get("active") is not False]
+    active_idols = [i for i in idols if is_scrapable(i)]
     
     expected_channels = []
     for idol in active_idols:
