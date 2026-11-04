@@ -647,8 +647,7 @@ def scrape_idol_http_channels(idol, today_backups, target_platform=None):
                 print(f"Scraped 0 for {name} (X), using backup: {backup_val}")
                 count = backup_val
             results.append(("X", x, count))
-            if avatar_url:
-                idol["x_avatar_url"] = avatar_url
+            # Avatars come from thaidoru-core (sync_idols.py), not from this scrape.
         except Exception as e:
             err_msg = str(e)
             alerts.append(f"X Scrape Error for {name} ({x}): {err_msg}")
@@ -1144,9 +1143,7 @@ def run_scraper(config_path: str, output_path: str, target_platform: str = None,
                                 try:
                                     followers, avatar_url = scrape_x_playwright(x_handle, browser=browser_instance)
                                     print(f"    Successfully resolved X via Playwright: {followers}")
-                                    if avatar_url:
-                                        idol_data["x_avatar_url"] = avatar_url
-                                        
+
                                     results = [r for r in results if not (r[2] == name and r[3] == "X")]
                                     results.append((today_str, now_time_str, name, "X", x_handle, followers))
                                     

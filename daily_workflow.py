@@ -14,12 +14,12 @@ def run_cmd(args):
 def main():
     print("=== STARTING DAILY WORKFLOW ===")
     
-    # 1. Run X avatar scraper and update idols.json
-    print("\n--- STEP 1: Updating X Avatars ---")
-    x_success = run_cmd([sys.executable, "x_image_scraper.py", "--update-config"])
-    if not x_success:
-        print("Warning: Avatar scraper encountered some errors, proceeding with stats monitoring...")
-        
+    # Avatars are no longer scraped here: sync_idols.py takes them from thaidoru-core.
+    # 1. Sync idols.json from thaidoru-core
+    print("\n--- STEP 1: Syncing idols from thaidoru-core ---")
+    if not run_cmd([sys.executable, "sync_idols.py"]):
+        print("Warning: core sync failed, using the existing idols.json...")
+
     # 2. Run follower stats scraper
     print("\n--- STEP 2: Running Follower Scraper ---")
     stats_success = run_cmd([sys.executable, "follower_scraper.py", "--run"])

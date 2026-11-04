@@ -13,7 +13,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "October 9",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070380454537220097/vsSIZT6N_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/ame.webp?v=1"
   },
   {
     "name": "Best",
@@ -29,7 +29,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "December 22",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070401124860096512/s0m4JJbH_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/best.webp?v=1"
   },
   {
     "name": "Jennie",
@@ -45,7 +45,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "June 16",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070380055658946560/sEAaEP8q_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/jennie.webp?v=1"
   },
   {
     "name": "Kitty",
@@ -61,8 +61,7 @@
     "status": "graduated",
     "graduation_date": "2026-09-05",
     "birthday": "April 11",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070387106242056192/urj9Fozt_400x400.jpg",
-    "active": false
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/kitty.webp"
   },
   {
     "name": "Lilin",
@@ -78,7 +77,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "December 10",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070379573624406016/iUqMHEdd_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/lilin.webp?v=1"
   },
   {
     "name": "Oum",
@@ -94,7 +93,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "May 27",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070382242178924544/FmUFZIIl_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/oum.webp?v=1"
   },
   {
     "name": "Minmin",
@@ -110,7 +109,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "May 30",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070380721211121664/bDtN_mIw_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/minmin.webp?v=1"
   },
   {
     "name": "Pin",
@@ -126,7 +125,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "March 22",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070380984714002432/TCwDcTNl_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/pin.webp?v=1"
   },
   {
     "name": "Eri",
@@ -142,7 +141,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "December 10",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2087896683032305664/QEsB7Fzu_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/eri.webp"
   },
   {
     "name": "Haru",
@@ -158,7 +157,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "April 9",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2087893317061373952/VC1pusRC_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/haru.webp"
   },
   {
     "name": "Jan",
@@ -174,7 +173,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "November 23",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2087911011944947713/ej934WiG_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/jan.webp"
   },
   {
     "name": "Kwang",
@@ -190,7 +189,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "August 10",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2087888955043946496/LPN9BfgR_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/kwang.webp"
   },
   {
     "name": "Nori",
@@ -206,7 +205,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "January 1",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2087895644359053312/N_PGRqQZ_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/nori.webp"
   },
   {
     "name": "Praew",
@@ -222,7 +221,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "December 7",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2087889389905215488/7Wy5AzEa_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/praew.webp"
   },
   {
     "name": "Punch",
@@ -238,7 +237,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "November 18",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2087956136876216320/ll5Mf_Q8_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/punch.webp"
   },
   {
     "name": "Tonliw",
@@ -254,7 +253,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "December 1",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2087887257831432192/uGn3CXa__400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/tonliw.webp"
   },
   {
     "name": "Xiu Zhen",
@@ -270,7 +269,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "October 31",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2087904924424429569/APUclvpQ_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/xiu-zhen.webp"
   },
   {
     "name": "Alice",
@@ -286,23 +285,23 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "October 11",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070379757766873088/6TIUnVJl_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/alice.webp"
   },
   {
     "name": "Gracenae",
     "core_id": "gracenae",
     "group": "Mirai Mirai",
-    "instagram_handle": "Gracenae.mirai",
-    "x_handle": "Gracenae_mirai",
+    "instagram_handle": "https://www.instagram.com/gracenae.cmj/",
+    "x_handle": "Gracenae_CMJ",
     "facebook_page": "profile.php?id=61556345361269",
-    "tiktok_handle": "gracenae.miraimirai",
+    "tiktok_handle": "https://www.tiktok.com/@gracenae.cmj",
     "agency": "Catsolute",
     "color": "Pink",
     "type": "member",
-    "status": "active",
-    "graduation_date": null,
+    "status": "graduated",
+    "graduation_date": "2026-10-31",
     "birthday": "February 8",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2112476815910711296/i2_iiQ74_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/gracenae.webp"
   },
   {
     "name": "Kartun",
@@ -318,7 +317,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "October 2",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070380314929815552/CEXTBsRq_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/kartun.webp"
   },
   {
     "name": "Kris",
@@ -334,7 +333,7 @@
     "status": "graduated",
     "graduation_date": "2026-09-23",
     "birthday": "January 19",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2103064583858683904/Qg1a3VeY_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/kris.webp"
   },
   {
     "name": "Mickey",
@@ -350,7 +349,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "October 28",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070383153957789696/Z-UQgxgr_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/mickey.webp"
   },
   {
     "name": "Nisa",
@@ -366,7 +365,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "July 28",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070391236733865984/SPscDjWS_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/nisa.webp"
   },
   {
     "name": "Pear",
@@ -382,7 +381,7 @@
     "status": "graduated",
     "graduation_date": "2026-09-20",
     "birthday": "May 6",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2102391251287113728/qbRinULy_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/pear.webp"
   },
   {
     "name": "Pixels",
@@ -398,7 +397,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "December 27",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070380226207784960/iFCzN2ZB_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/pixels.webp"
   },
   {
     "name": "Sai",
@@ -414,7 +413,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "November 1",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2070383112828354560/wWAO5LmC_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/sai.webp"
   },
   {
     "name": "Farm",
@@ -430,7 +429,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "April 10",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100209004517683200/EnLrdXow_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/farm.webp?v=1"
   },
   {
     "name": "Jasmine",
@@ -446,7 +445,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "October 25",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100208313673928705/Z9aMlkwX_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/jasmine.webp?v=1"
   },
   {
     "name": "Jeenin",
@@ -462,7 +461,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "December 23",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100208333731094528/kCXW2Nl__400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/jeenin.webp?v=1"
   },
   {
     "name": "Jk",
@@ -478,7 +477,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "October 14",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100208639730683904/d4HRujHg_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/jk.webp?v=1"
   },
   {
     "name": "Mali",
@@ -494,7 +493,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "May 12",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100210075550023680/EusAKmwl_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/mali.webp?v=1"
   },
   {
     "name": "Moya",
@@ -510,14 +509,14 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "October 16",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100209914107088896/ZDPu1faI_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/moya.webp?v=1"
   },
   {
     "name": "Ploy",
     "core_id": "ploy",
     "group": "Dream:0n",
     "instagram_handle": "ploy.dream0n",
-    "x_handle": "ploy_dream0n",
+    "x_handle": "Ploy_dream0n",
     "facebook_page": "ploy.dream0n",
     "tiktok_handle": "ploy.dream0n",
     "agency": "Catsolute",
@@ -526,7 +525,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "February 14",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100209649899511809/DZ6h6wrC_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/ploy.webp?v=1"
   },
   {
     "name": "Snowy",
@@ -542,14 +541,14 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "June 25",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100209089804677121/SYj_uwkg_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/snowy.webp?v=1"
   },
   {
     "name": "Bowie",
     "core_id": "bowie",
     "group": "Nox:0ff",
     "instagram_handle": "bowie.nox0ff",
-    "x_handle": "bowie_nox0ff",
+    "x_handle": "Bowie_Nox0ff",
     "facebook_page": "profile.php?id=61589013040511",
     "tiktok_handle": "bowie_nox0ff",
     "agency": "Catsolute",
@@ -558,14 +557,14 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "August 7",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100208929632669696/II-D5YDm_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/bowie.webp?v=1"
   },
   {
     "name": "Feb",
     "core_id": "feb",
     "group": "Nox:0ff",
     "instagram_handle": "feb.nox0ff",
-    "x_handle": "feb_nox0ff",
+    "x_handle": "Feb_Nox0ff",
     "facebook_page": "profile.php?id=61589229001319",
     "tiktok_handle": "feb.nox0ff",
     "agency": "Catsolute",
@@ -574,14 +573,14 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "February 19",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100208190868844544/sYlMak2n_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/feb.webp?v=1"
   },
   {
     "name": "Mii",
     "core_id": "mii",
     "group": "Nox:0ff",
     "instagram_handle": "mii.nox0ff",
-    "x_handle": "mii_nox0ff",
+    "x_handle": "Mii_Nox0ff",
     "facebook_page": "profile.php?id=61589166033470",
     "tiktok_handle": "mii_nox0ff",
     "agency": "Catsolute",
@@ -590,14 +589,14 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "June 13",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100209494735372288/d00PYAMm_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/mii.webp?v=1"
   },
   {
     "name": "Miyu",
     "core_id": "miyu",
     "group": "Nox:0ff",
     "instagram_handle": "miyu.nox0ff",
-    "x_handle": "miyu_nox0ff",
+    "x_handle": "Miyu_Nox0ff",
     "facebook_page": "profile.php?id=61589397683980",
     "tiktok_handle": "miyu_nox0ff",
     "agency": "Catsolute",
@@ -606,14 +605,14 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "June 26",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100210964767588352/3PKWZBkD_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/miyu.webp?v=1"
   },
   {
     "name": "Time",
     "core_id": "time",
     "group": "Nox:0ff",
     "instagram_handle": "time.nox0ff",
-    "x_handle": "time_nox0ff",
+    "x_handle": "Time_Nox0ff",
     "facebook_page": "profile.php?id=61589267309376",
     "tiktok_handle": "time.nox0ff",
     "agency": "Catsolute",
@@ -622,14 +621,14 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "September 25",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100209158603862016/7FJoI-6w_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/time.webp?v=1"
   },
   {
     "name": "Yiwha",
     "core_id": "yiwha",
     "group": "Nox:0ff",
     "instagram_handle": "yiwha.nox0ff",
-    "x_handle": "yiwha_nox0ff",
+    "x_handle": "Yiwha_Nox0ff",
     "facebook_page": "profile.php?id=61556038916644",
     "tiktok_handle": "yiwhazaabzaa",
     "agency": "Catsolute",
@@ -638,7 +637,7 @@
     "status": "active",
     "graduation_date": null,
     "birthday": "May 22",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2100221465077620737/ylFQt9hU_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/yiwha.webp?v=1"
   },
   {
     "name": "Sora! Sora!",
@@ -654,7 +653,7 @@
     "status": "active",
     "debut_date": "2021-11-23",
     "spotify_handle": "https://open.spotify.com/artist/2uR3okhIb1DOu8H50OXaF5",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2072879671612715008/xOSOebU5_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/group_sora-sora.webp"
   },
   {
     "name": "Yami Yami",
@@ -670,7 +669,7 @@
     "status": "active",
     "debut_date": "2022-11-19",
     "spotify_handle": "https://open.spotify.com/artist/2WO7Skkfg5HS441G9MjuUq",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2072880621702254592/Bqdry8yw_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/group_yami-yami.webp"
   },
   {
     "name": "Mirai Mirai",
@@ -686,7 +685,7 @@
     "status": "active",
     "debut_date": "2024-04-08",
     "spotify_handle": "https://open.spotify.com/artist/51ck4EeLDIgaMF4HbKhvFn",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2072880245427027968/kKRgyA-n_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/group_mirai-mirai.webp"
   },
   {
     "name": "Dream:0n",
@@ -702,7 +701,7 @@
     "status": "active",
     "debut_date": "2026-04-05",
     "spotify_handle": "https://open.spotify.com/artist/2CG94H8Bwi4396EDkHNFJh",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2073871333751222272/Ihs_UtAI_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/group_dream-0n.webp"
   },
   {
     "name": "Nox:0ff",
@@ -718,6 +717,6 @@
     "status": "active",
     "debut_date": "2026-06-13",
     "spotify_handle": "https://open.spotify.com/artist/4bPHeXC3AFRQKm5SZ0tpHM",
-    "x_avatar_url": "https://pbs.twimg.com/profile_images/2073871737041850368/9FxjGsiv_400x400.jpg"
+    "x_avatar_url": "https://pavinss2.github.io/thaidoru-core/assets/avatars/group_nox-0ff.webp"
   }
 ]

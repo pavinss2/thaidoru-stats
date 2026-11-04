@@ -1,4 +1,4 @@
-name: Daily Idol Follower Scraper & Avatar Monitor
+name: Daily Idol Follower Scraper
 
 on:
   schedule:
@@ -111,16 +111,6 @@ jobs:
         else
           python3 follower_scraper.py --run --platform x $ORDER_FLAG
         fi
-    - name: Commit and Push idols config updates (if avatar URL changed)
-      if: success() || failure()
-      run: |
-        git config --global user.name "Github Actions Scraper Bot"
-        git config --global user.email "actions@github.com"
-        git add idols.json || true
-        git commit -m "Auto-update X avatars: $(date +'%Y-%m-%d')" || exit 0
-        for i in {1..5}; do
-          git pull --rebase && git push && break || sleep 5
-        done
 
   scrape_facebook:
     needs: sync_idols
