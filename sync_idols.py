@@ -8,8 +8,9 @@ idols.json in the flat shape the scraper and dashboard already read.
 - A member's group, color and handles come from their current membership.
   If they have no current membership in the agency, their latest one is used
   and they are marked graduated (scraper skips them, dashboard labels them).
-- Fields this repo owns are kept: x_avatar_url (avatar bot) and "active": false
-  (set by the avatar bot when an X account disappears).
+- x_avatar_url comes from core too: the WebP that core's weekly avatar job
+  keeps fresh (stable URL on core's GitHub Pages), else core's raw X avatar
+  URL. The old value is only kept if core has nothing for that idol.
 - If core can't be reached, idols.json is left as is (it is the last snapshot).
 
 Usage:
@@ -26,6 +27,9 @@ import urllib.request
 from idol_status import ENDED_MEMBERSHIP_STATUSES
 
 DEFAULT_API = os.environ.get("THAIDORU_CORE_API", "https://pavinss2.github.io/thaidoru-core/v1")
+# Where core's cached avatar files (avatar_cached_path) are published.
+CORE_CDN = os.environ.get("THAIDORU_CORE_CDN", "https://pavinss2.github.io/thaidoru-core").rstrip("/")
+DEFAULT_AVATAR = "assets/avatars/default_avatar.webp"
 DEFAULT_AGENCY = "Catsolute"
 CORE_FILES = ("companies", "groups", "members", "memberships")
 MONTHS = ["January", "February", "March", "April", "May", "June", "July",
@@ -60,6 +64,14 @@ def sns_field(sns: list, platform: str, field: str):
         if s.get("platform") == platform:
             return s.get(field)
     return None
+
+
+def avatar_url(entity: dict) -> str:
+    """Core's cached WebP if it has one, else its raw X avatar URL, else ""."""
+    cached = entity.get("avatar_cached_path")
+    if cached and cached != DEFAULT_AVATAR:
+        return f"{CORE_CDN}/{cached.lstrip('/')}"
+    return sns_field(entity.get("sns"), "x", "avatar_url") or ""
 
 
 def format_birthday(b: dict):
@@ -110,7 +122,7 @@ def build_entries(core: dict, agency: str) -> list:
             "status": status,
             "graduation_date": ms.get("end_date") if status == "graduated" else None,
             "birthday": format_birthday(m.get("birthday")),
-            "x_avatar_url": sns_field(m["sns"], "x", "avatar_url") or "",
+            "x_avatar_url": avatar_url(m),
         })
 
     group_entries = []
@@ -129,7 +141,7 @@ def build_entries(core: dict, agency: str) -> list:
             "status": "disbanded" if g.get("status") == "disbanded" else "active",
             "debut_date": g.get("debut_date"),
             "spotify_handle": (g.get("music_links") or {}).get("spotify") or sns_handle(g["sns"], "spotify"),
-            "x_avatar_url": sns_field(g["sns"], "x", "avatar_url") or "",
+            "x_avatar_url": avatar_url(g),
         })
 
     group_order = {g["name"]: i for i, g in enumerate(groups)}
@@ -138,16 +150,15 @@ def build_entries(core: dict, agency: str) -> list:
 
 
 def merge(existing: list, fresh: list) -> list:
-    """Keep repo-owned fields and the existing ordering; new idols go after their group."""
+    """Keep the existing ordering; new idols go after their group."""
     old_by_name = {e["name"].lower(): e for e in existing}
     for e in fresh:
         old = old_by_name.get(e["name"].lower())
         if not old:
             continue
-        if old.get("x_avatar_url"):
+        # Core is the source of avatars; only fall back to the old one if core has none.
+        if not e.get("x_avatar_url") and old.get("x_avatar_url"):
             e["x_avatar_url"] = old["x_avatar_url"]
-        if old.get("active") is False:
-            e["active"] = False
         # Keep the group's display color when core has no theme color yet.
         if e["type"] == "group" and not e.get("color") and old.get("color"):
             e["color"] = old["color"]
@@ -211,7 +222,7 @@ def main():
     if args.dry_run:
         return
     with open(args.config, "w", encoding="utf-8") as f:
-        # Same format as x_image_scraper.py so the two writers don't churn the file.
+        # Same format as follower_scraper.py so the two writers don't churn the file.
         json.dump(merged, f, indent=2)
     print(f"Wrote {len(merged)} entries to {args.config}.")
 

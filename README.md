@@ -27,7 +27,7 @@ graph TD
     style F fill:#16161a,stroke:#34c759,color:#fff
 ```
 
-1. **The Python Scraping Pipeline (GitHub)**: Executed daily in virtual GitHub Actions runner instances, it scrapes X, Instagram, Facebook, and TikTok concurrently, extracts avatars, resolves rate-limits with backoff logic, writes updates directly to Neon Postgres, and dispatches automated status/failure summaries to your Lark Group Chat.
+1. **The Python Scraping Pipeline (GitHub)**: Executed daily in virtual GitHub Actions runner instances, it scrapes X, Instagram, Facebook, and TikTok concurrently, resolves rate-limits with backoff logic, writes updates directly to Neon Postgres, and dispatches automated status/failure summaries to your Lark Group Chat.
 2. **The Cloud database (Neon Postgres)**: Serves as the single source of truth for stats history, resolving duplicate runs via a unique key constraint and handling missing-data interpolation.
 3. **The Serverless API & Dashboard (Vercel)**: A high-performance dashboard that queries the database via serverless functions (`/api/stats`), with built-in backward compatibility to load local CSV files if database access is unavailable (e.g. during local offline testing).
 
@@ -46,7 +46,7 @@ python3 sync_idols.py --source ../thaidoru-core/src/data # sync from a local cor
 
 **Graduated idols**: when a member's membership in core is graduated (or withdrawn), the sync sets `"status": "graduated"` and `"graduation_date"`. The scrapers skip them (see `idol_status.py`), but their follower history stays in the database and they stay on the dashboard with a *Graduated* label. Lists hide them by default; tick **Show graduated** to bring them back.
 
-To change idol data (new member, new handle, graduation), edit it in thaidoru-core, not here. Only `x_avatar_url` and `"active": false` are owned by this repo (the avatar bot), and the sync keeps them.
+To change idol data (new member, new handle, graduation), edit it in thaidoru-core, not here. Avatars come from core too: `x_avatar_url` points at the WebP that core's weekly avatar job keeps fresh (`https://pavinss2.github.io/thaidoru-core/assets/avatars/{id}.webp`). This repo no longer scrapes avatars.
 
 Stores the metadata for all 5 official group channels and every Catsolute member profile:
 * **Schema Attributes**:
@@ -55,7 +55,7 @@ Stores the metadata for all 5 official group channels and every Catsolute member
   * `"group"`: Group name (*Sora! Sora!*, *Yami Yami*, *Mirai Mirai*, *Dream:0n*, *Nox:0ff*).
   * `"color"`: representative theme color keyword.
   * `"instagram_handle"`, `"x_handle"`, `"facebook_page"`, `"tiktok_handle"`: Platform identifiers.
-  * `"x_avatar_url"`: Cached high-resolution (`400x400`) profile picture URL.
+  * `"x_avatar_url"`: Avatar from thaidoru-core (its cached 400x400 WebP).
   * `"core_id"`: The member or group id in thaidoru-core.
   * `"status"`: `"active"` or `"graduated"` (members), `"active"` or `"disbanded"` (groups).
   * `"graduation_date"`: Last day in the group, from core, when graduated.
@@ -80,9 +80,9 @@ For maximum resilience against datacenter IP bans and rate-limiting on cloud run
 2.  **Layer 2 (Instastatistics - Exact Count)**: If the profile is not indexed on SocialBlade (returns 404) or is blocked, the scraper queries `instastatistics.com/{username}` and parses its HTML metadata.
 3.  **Layer 3 (Direct Profile Scrape - Rounded Count)**: If both fail, it falls back to crawling `instagram.com/{username}/` directly using a Googlebot user-agent. If Instagram redirects to a login wall 3 times, the scraper raises a rate-limit error.
 
-##### 🐦 X (Twitter) & Avatar Monitor
+##### 🐦 X (Twitter)
 1.  **Layer 1 (Direct Profile Scrape - Exact Count)**: Loads `x.com/{username}` and uses regular expressions to find the exact, unrounded follower count embedded in the page source.
-2.  **Avatar Extractor**: Locates the profile image meta tag (`og:image`), strips out thumbnail suffixes (like `_normal` or `_bigger`), replaces it with `_400x400` to get the high-resolution original avatar, and writes it to `idols.json`.
+2.  **Avatars** are not scraped here any more; they come from thaidoru-core via `sync_idols.py`.
 
 ##### 👤 Facebook
 1.  **Layer 1 (SocialBlade - Exact Count)**: Only for standard usernames (excluding numeric `profile.php?id=` URLs), queries `socialblade.com/facebook/user/{username}` and parses the `__NEXT_DATA__` React JSON payload for the exact likes count.
