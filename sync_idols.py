@@ -70,7 +70,9 @@ def avatar_url(entity: dict) -> str:
     """Core's cached WebP if it has one, else its raw X avatar URL, else ""."""
     cached = entity.get("avatar_cached_path")
     if cached and cached != DEFAULT_AVATAR:
-        return f"{CORE_CDN}/{cached.lstrip('/')}"
+        # The file name stays the same when the avatar changes; ?v= busts caches.
+        version = len(entity.get("avatar_history") or [])
+        return f"{CORE_CDN}/{cached.lstrip('/')}" + (f"?v={version}" if version else "")
     return sns_field(entity.get("sns"), "x", "avatar_url") or ""
 
 
